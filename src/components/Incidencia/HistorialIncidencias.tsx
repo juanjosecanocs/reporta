@@ -61,7 +61,7 @@ function Fila({
   const tipo = tipos.find((t) => t.id === tipoId);
   const subtipo = tipo?.subtipos?.find((s) => s.id === subtipoId);
   const color = tipo?.color_primario ?? '#043F63';
-  const icono = SUBTIPO_ICONOS[subtipoId] ?? TIPO_ICONOS[tipoId] ?? ICONO_POR_DEFECTO;
+  const icono = subtipo?.icono_name ?? SUBTIPO_ICONOS[subtipoId] ?? tipo?.icono_name ?? TIPO_ICONOS[tipoId] ?? ICONO_POR_DEFECTO;
 
   return (
     <div className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2">

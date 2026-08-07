@@ -13,11 +13,7 @@ import type { Incidencia } from '../types';
 
 const ESTADOS: Incidencia['estado'][] = ['pendiente', 'revisada', 'resuelto', 'rechazado'];
 
-interface Props {
-  onCerrarSesion: () => void;
-}
-
-export function AdminDashboard({ onCerrarSesion }: Props) {
+export function AdminDashboard() {
   const { tipos } = useTipos();
   const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -91,13 +87,6 @@ export function AdminDashboard({ onCerrarSesion }: Props) {
 
   return (
     <div className="mx-auto max-w-5xl p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-primary">REPORTA · Panel admin</h1>
-        <button type="button" onClick={onCerrarSesion} className="text-sm text-gray-500 underline">
-          Cerrar sesión
-        </button>
-      </div>
-
       <div className="mb-4 flex flex-wrap gap-3">
         <select
           value={filtroEstado}
@@ -160,7 +149,12 @@ export function AdminDashboard({ onCerrarSesion }: Props) {
           {incidencias.map((inc) => {
             const tipo = tipos.find((t) => t.id === inc.tipo_id);
             const subtipo = tipo?.subtipos?.find((s) => s.id === inc.subtipo_id);
-            const icono = SUBTIPO_ICONOS[inc.subtipo_id] ?? TIPO_ICONOS[inc.tipo_id] ?? ICONO_POR_DEFECTO;
+            const icono =
+              subtipo?.icono_name ??
+              SUBTIPO_ICONOS[inc.subtipo_id] ??
+              tipo?.icono_name ??
+              TIPO_ICONOS[inc.tipo_id] ??
+              ICONO_POR_DEFECTO;
             const borrada = !!inc.deleted_at;
             const enProcesoDeBorrar = eliminando?.id === inc.id;
 

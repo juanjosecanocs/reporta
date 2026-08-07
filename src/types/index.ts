@@ -20,6 +20,7 @@ export interface Tipo {
   id: string;
   nombre: string;
   descripcion?: string;
+  icono_name?: string | null;
   color_primario: string;
   color_secundario?: string;
   orden: number;
@@ -31,6 +32,7 @@ export interface Subtipo {
   id: string;
   tipo_id: string;
   nombre: string;
+  icono_name?: string | null;
   urgencia: number;
   orden: number;
   activo: boolean;

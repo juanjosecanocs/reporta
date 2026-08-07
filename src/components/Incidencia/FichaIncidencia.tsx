@@ -33,7 +33,12 @@ export function FichaIncidencia({
   onComentarioChange,
   cabeceraExtra,
 }: Props) {
-  const icono = (subtipo && SUBTIPO_ICONOS[subtipo.id]) ?? (tipo && TIPO_ICONOS[tipo.id]) ?? ICONO_POR_DEFECTO;
+  const icono =
+    subtipo?.icono_name ??
+    (subtipo && SUBTIPO_ICONOS[subtipo.id]) ??
+    tipo?.icono_name ??
+    (tipo && TIPO_ICONOS[tipo.id]) ??
+    ICONO_POR_DEFECTO;
 
   return (
     <div className="flex flex-col gap-3">

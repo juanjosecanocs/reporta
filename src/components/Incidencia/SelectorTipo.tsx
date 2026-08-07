@@ -32,7 +32,7 @@ export function SelectorTipo({ onSeleccionar, onVolver }: Props) {
                 className="flex h-14 w-14 items-center justify-center rounded-full border-4 bg-white text-2xl"
                 style={{ borderColor: tipo.color_primario }}
               >
-                {TIPO_ICONOS[tipo.id] ?? ICONO_POR_DEFECTO}
+                {tipo.icono_name ?? TIPO_ICONOS[tipo.id] ?? ICONO_POR_DEFECTO}
               </span>
               <span className="text-sm font-medium text-gray-800">{tipo.nombre}</span>
             </button>

@@ -31,7 +31,7 @@ export function SelectorSubtipo({ tipo, onSeleccionar, onVolver }: Props) {
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[3px] bg-white text-lg"
                 style={{ borderColor: tipo.color_primario }}
               >
-                {SUBTIPO_ICONOS[subtipo.id] ?? ICONO_POR_DEFECTO}
+                {subtipo.icono_name ?? SUBTIPO_ICONOS[subtipo.id] ?? ICONO_POR_DEFECTO}
               </span>
               <span className="flex-1">{subtipo.nombre}</span>
               <span className="text-gray-400">›</span>
