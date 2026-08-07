@@ -7,10 +7,11 @@ const ESTILO_MAPA = 'https://tiles.openfreemap.org/styles/liberty';
 interface Props {
   latitud: number;
   longitud: number;
-  onCambiar: (coords: { latitud: number; longitud: number }) => void;
+  arrastrable?: boolean;
+  onCambiar?: (coords: { latitud: number; longitud: number }) => void;
 }
 
-export function MapaSeleccionUbicacion({ latitud, longitud, onCambiar }: Props) {
+export function MapaSeleccionUbicacion({ latitud, longitud, arrastrable = true, onCambiar }: Props) {
   const contenedorRef = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MaplibreMap | null>(null);
 
@@ -25,14 +26,16 @@ export function MapaSeleccionUbicacion({ latitud, longitud, onCambiar }: Props) 
     });
     mapaRef.current = mapa;
 
-    const marcador = new Marker({ draggable: true, color: '#F7931E' })
+    const marcador = new Marker({ draggable: arrastrable, color: '#F7931E' })
       .setLngLat([longitud, latitud])
       .addTo(mapa);
 
-    marcador.on('dragend', () => {
-      const { lat, lng } = marcador.getLngLat();
-      onCambiar({ latitud: lat, longitud: lng });
-    });
+    if (arrastrable) {
+      marcador.on('dragend', () => {
+        const { lat, lng } = marcador.getLngLat();
+        onCambiar?.({ latitud: lat, longitud: lng });
+      });
+    }
 
     return () => {
       mapa.remove();
@@ -46,7 +49,7 @@ export function MapaSeleccionUbicacion({ latitud, longitud, onCambiar }: Props) 
   return (
     <div className="flex flex-col gap-1">
       <div ref={contenedorRef} className="h-56 w-full overflow-hidden rounded-lg border border-gray-200" />
-      <p className="text-xs text-gray-500">Arrastra el marcador para ajustar la ubicación exacta</p>
+      {arrastrable && <p className="text-xs text-gray-500">Arrastra el marcador para ajustar la ubicación exacta</p>}
     </div>
   );
 }

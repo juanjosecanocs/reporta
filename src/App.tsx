@@ -6,7 +6,7 @@ import { EstadisticasSidebar } from './components/Map/EstadisticasSidebar';
 import { SelectorTipo } from './components/Incidencia/SelectorTipo';
 import { SelectorSubtipo } from './components/Incidencia/SelectorSubtipo';
 import { CameraCapture } from './components/Incidencia/CameraCapture';
-import { MapaSeleccionUbicacion } from './components/Incidencia/MapaSeleccionUbicacion';
+import { FichaIncidencia } from './components/Incidencia/FichaIncidencia';
 import { HistorialIncidencias } from './components/Incidencia/HistorialIncidencias';
 import { useGeolocalizacion, type Coordenadas } from './hooks/useGeolocalizacion';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -26,6 +26,7 @@ function App() {
   const [tipo, setTipo] = useState<Tipo | null>(null);
   const [subtipo, setSubtipo] = useState<Subtipo | null>(null);
   const [foto, setFoto] = useState<Blob | null>(null);
+  const [fotoPreviewUrl, setFotoPreviewUrl] = useState<string | null>(null);
   const [descripcion, setDescripcion] = useState('');
   const [codigoSeguimiento, setCodigoSeguimiento] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -43,6 +44,7 @@ function App() {
     setTipo(null);
     setSubtipo(null);
     setFoto(null);
+    setFotoPreviewUrl(null);
     setDescripcion('');
     setCodigoSeguimiento(null);
     setErrorEnvio(null);
@@ -138,7 +140,12 @@ function App() {
 
         {paso === 'foto' && (
           <div>
-            <CameraCapture onCapturada={setFoto} />
+            <CameraCapture
+              onCapturada={(blob) => {
+                setFoto(blob);
+                setFotoPreviewUrl(URL.createObjectURL(blob));
+              }}
+            />
             <div className="flex justify-center">
               <button
                 type="button"
@@ -155,25 +162,21 @@ function App() {
         {paso === 'revision' && tipo && subtipo && (
           <div className="mx-auto flex max-w-md flex-col gap-3 p-4">
             <h2 className="text-lg font-semibold text-gray-800">Revisa tu incidencia</h2>
-            <p className="text-sm text-gray-600">
-              <strong>{tipo.nombre}</strong> · {subtipo.nombre}
-            </p>
             {cargandoUbicacion && <p className="text-sm text-gray-600">Obteniendo ubicación GPS…</p>}
             {errorUbicacion && <p className="text-sm text-red-500">Error de ubicación: {errorUbicacion}</p>}
             {coordenadasEfectivas && (
-              <MapaSeleccionUbicacion
+              <FichaIncidencia
+                tipo={tipo}
+                subtipo={subtipo}
                 latitud={coordenadasEfectivas.latitud}
                 longitud={coordenadasEfectivas.longitud}
-                onCambiar={(c) => setCoordenadasAjustadas({ ...c, precision_metros: 0 })}
+                imagenUrl={fotoPreviewUrl}
+                arrastrable
+                onCambiarUbicacion={(c) => setCoordenadasAjustadas({ ...c, precision_metros: 0 })}
+                comentario={descripcion}
+                onComentarioChange={setDescripcion}
               />
             )}
-            <textarea
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Descripción opcional"
-              className="rounded-lg border border-gray-300 p-2 text-sm"
-              rows={3}
-            />
             {errorEnvio && <p className="text-sm text-red-500">{errorEnvio}</p>}
             <button
               type="button"

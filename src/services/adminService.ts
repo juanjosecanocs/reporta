@@ -4,6 +4,7 @@ import type { Incidencia } from '../types';
 export interface FiltrosAdmin {
   estado?: string;
   tipoId?: string;
+  subtipoId?: string;
   incluirBorradas?: boolean;
 }
 
@@ -16,6 +17,7 @@ export async function listarIncidenciasAdmin(filtros: FiltrosAdmin = {}): Promis
 
   if (filtros.estado) query = query.eq('estado', filtros.estado);
   if (filtros.tipoId) query = query.eq('tipo_id', filtros.tipoId);
+  if (filtros.subtipoId) query = query.eq('subtipo_id', filtros.subtipoId);
   if (!filtros.incluirBorradas) query = query.is('deleted_at', null);
 
   const { data, error } = await query;

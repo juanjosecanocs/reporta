@@ -8,6 +8,7 @@ import {
   type FiltrosAdmin,
 } from '../services/adminService';
 import { SUBTIPO_ICONOS, TIPO_ICONOS, ICONO_POR_DEFECTO } from '../data/iconos';
+import { FichaIncidencia } from '../components/Incidencia/FichaIncidencia';
 import type { Incidencia } from '../types';
 
 const ESTADOS: Incidencia['estado'][] = ['pendiente', 'revisada', 'resuelto', 'rechazado'];
@@ -24,9 +25,13 @@ export function AdminDashboard({ onCerrarSesion }: Props) {
 
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroSubtipo, setFiltroSubtipo] = useState('');
   const [incluirBorradas, setIncluirBorradas] = useState(false);
 
   const [eliminando, setEliminando] = useState<{ id: string; motivo: string } | null>(null);
+  const [fichaAbierta, setFichaAbierta] = useState<Incidencia | null>(null);
+
+  const subtiposDelTipo = tipos.find((t) => t.id === filtroTipo)?.subtipos ?? [];
 
   async function cargar() {
     setCargando(true);
@@ -35,6 +40,7 @@ export function AdminDashboard({ onCerrarSesion }: Props) {
       const filtros: FiltrosAdmin = {
         estado: filtroEstado || undefined,
         tipoId: filtroTipo || undefined,
+        subtipoId: filtroSubtipo || undefined,
         incluirBorradas,
       };
       setIncidencias(await listarIncidenciasAdmin(filtros));
@@ -48,10 +54,11 @@ export function AdminDashboard({ onCerrarSesion }: Props) {
   useEffect(() => {
     cargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtroEstado, filtroTipo, incluirBorradas]);
+  }, [filtroEstado, filtroTipo, filtroSubtipo, incluirBorradas]);
 
   async function cambiarEstado(id: string, estado: Incidencia['estado']) {
     setIncidencias((prev) => prev.map((i) => (i.id === id ? { ...i, estado } : i)));
+    setFichaAbierta((prev) => (prev && prev.id === id ? { ...prev, estado } : prev));
     try {
       await actualizarEstado(id, estado);
     } catch (err) {
@@ -65,6 +72,7 @@ export function AdminDashboard({ onCerrarSesion }: Props) {
     try {
       await eliminarIncidencia(eliminando.id, eliminando.motivo);
       setEliminando(null);
+      setFichaAbierta(null);
       cargar();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error eliminando la incidencia');
@@ -74,6 +82,7 @@ export function AdminDashboard({ onCerrarSesion }: Props) {
   async function restaurar(id: string) {
     try {
       await restaurarIncidencia(id);
+      setFichaAbierta(null);
       cargar();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error restaurando la incidencia');
@@ -104,13 +113,29 @@ export function AdminDashboard({ onCerrarSesion }: Props) {
         </select>
         <select
           value={filtroTipo}
-          onChange={(e) => setFiltroTipo(e.target.value)}
+          onChange={(e) => {
+            setFiltroTipo(e.target.value);
+            setFiltroSubtipo('');
+          }}
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         >
           <option value="">Todos los tipos</option>
           {tipos.map((t) => (
             <option key={t.id} value={t.id}>
               {t.nombre}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filtroSubtipo}
+          onChange={(e) => setFiltroSubtipo(e.target.value)}
+          disabled={!filtroTipo}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:opacity-50"
+        >
+          <option value="">{filtroTipo ? 'Todos los subtipos' : 'Elige un tipo primero'}</option>
+          {subtiposDelTipo.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.nombre}
             </option>
           ))}
         </select>
@@ -171,6 +196,14 @@ export function AdminDashboard({ onCerrarSesion }: Props) {
                   )}
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => setFichaAbierta(inc)}
+                  className="rounded-lg border border-primary px-3 py-1 text-xs font-semibold text-primary"
+                >
+                  Ficha
+                </button>
+
                 <select
                   value={inc.estado}
                   onChange={(e) => cambiarEstado(inc.id, e.target.value as Incidencia['estado'])}
@@ -229,6 +262,102 @@ export function AdminDashboard({ onCerrarSesion }: Props) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {fichaAbierta && (
+        <div
+          className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setFichaAbierta(null)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-800">{fichaAbierta.codigo_seguimiento}</p>
+                <p className="text-xs text-gray-500">
+                  {new Date(fichaAbierta.created_at).toLocaleString('es-ES')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFichaAbierta(null)}
+                className="text-lg text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </div>
+
+            <FichaIncidencia
+              tipo={tipos.find((t) => t.id === fichaAbierta.tipo_id)}
+              subtipo={tipos
+                .find((t) => t.id === fichaAbierta.tipo_id)
+                ?.subtipos?.find((s) => s.id === fichaAbierta.subtipo_id)}
+              latitud={fichaAbierta.latitud}
+              longitud={fichaAbierta.longitud}
+              imagenUrl={fichaAbierta.imagen_url}
+              comentario={fichaAbierta.descripcion_corta}
+            />
+
+            {fichaAbierta.deleted_at && (
+              <p className="mt-3 text-sm font-semibold text-red-600">
+                Eliminada: {fichaAbierta.deleted_reason}
+              </p>
+            )}
+
+            <div className="mt-4 flex items-center gap-2">
+              <select
+                value={fichaAbierta.estado}
+                onChange={(e) => cambiarEstado(fichaAbierta.id, e.target.value as Incidencia['estado'])}
+                disabled={!!fichaAbierta.deleted_at}
+                className="rounded-lg border border-gray-300 px-2 py-1 text-sm disabled:opacity-50"
+              >
+                {ESTADOS.map((e) => (
+                  <option key={e} value={e}>
+                    {e}
+                  </option>
+                ))}
+              </select>
+
+              {fichaAbierta.deleted_at ? (
+                <button
+                  type="button"
+                  onClick={() => restaurar(fichaAbierta.id)}
+                  className="rounded-lg border border-primary px-3 py-1 text-xs font-semibold text-primary"
+                >
+                  Restaurar
+                </button>
+              ) : eliminando?.id === fichaAbierta.id ? (
+                <div className="flex flex-1 items-center gap-2">
+                  <input
+                    autoFocus
+                    value={eliminando.motivo}
+                    onChange={(e) => setEliminando({ id: fichaAbierta.id, motivo: e.target.value })}
+                    placeholder="Motivo"
+                    className="w-full min-w-0 rounded-lg border border-gray-300 px-2 py-1 text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={confirmarEliminar}
+                    disabled={!eliminando.motivo.trim()}
+                    className="shrink-0 rounded-lg bg-red-500 px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEliminando({ id: fichaAbierta.id, motivo: '' })}
+                  className="rounded-lg border border-red-400 px-3 py-1 text-xs font-semibold text-red-500"
+                >
+                  Eliminar
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
