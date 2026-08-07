@@ -1,0 +1,25 @@
+/*
+  Myriad Pro es una fuente de pago (Adobe). No se distribuye en este repo.
+  Coloca los archivos licenciados en /public/fonts/ (ver README) y esta
+  declaración los activará automáticamente. Mientras tanto, se usa el
+  fallback definido en tailwind.config.js (system sans-serif).
+*/
+@font-face {
+  font-family: 'Myriad Pro';
+  src: url('/fonts/MyriadPro-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --color-primary: #043f63;
+  --color-secondary: #f7931e;
+}
+
+body {
+  margin: 0;
+  font-family: theme('fontFamily.sans');
+  color: var(--color-primary);
+  background-color: #f5f7f9;
+}
