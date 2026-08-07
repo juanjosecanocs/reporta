@@ -34,12 +34,13 @@ Aplica el esquema de base de datos en el SQL Editor de Supabase (o vía `supabas
 
 ```
 supabase/migrations/001_create_tables.sql
+supabase/migrations/002_seed_subtipos.sql
 ```
 
-Esto crea las 5 tablas (`tipos_incidencias`, `subtipos_incidencias`, `incidencias_anonimas`,
+`001` crea las 5 tablas (`tipos_incidencias`, `subtipos_incidencias`, `incidencias_anonimas`,
 `images`, `admin_users`), las políticas RLS de acceso anónimo, el bucket de Storage
-`incidencias` y el seed inicial (8 tipos + subtipos de "Limpieza viaria"; el resto de
-subtipos —60+ en total— se irán añadiendo en próximos sprints).
+`incidencias` y el seed de los 8 tipos + subtipos de "Limpieza viaria". `002` añade los
+subtipos del resto de tipos (62 subtipos en total entre ambas migraciones).
 
 Arranca el entorno de desarrollo:
 
