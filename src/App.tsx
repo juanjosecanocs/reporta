@@ -6,7 +6,8 @@ import { EstadisticasSidebar } from './components/Map/EstadisticasSidebar';
 import { SelectorTipo } from './components/Incidencia/SelectorTipo';
 import { SelectorSubtipo } from './components/Incidencia/SelectorSubtipo';
 import { CameraCapture } from './components/Incidencia/CameraCapture';
-import { useGeolocalizacion } from './hooks/useGeolocalizacion';
+import { MapaSeleccionUbicacion } from './components/Incidencia/MapaSeleccionUbicacion';
+import { useGeolocalizacion, type Coordenadas } from './hooks/useGeolocalizacion';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useHistorialIncidencias } from './hooks/useLocalStorage';
 import { crearIncidencia, adjuntarImagen } from './services/storageService';
@@ -28,10 +29,13 @@ function App() {
   const [codigoSeguimiento, setCodigoSeguimiento] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
+  const [coordenadasAjustadas, setCoordenadasAjustadas] = useState<Coordenadas | null>(null);
 
   const uuidCliente = useUuidCliente();
   const { coordenadas, cargando: cargandoUbicacion, error: errorUbicacion, obtenerUbicacion } = useGeolocalizacion();
   const { agregar: agregarAlHistorial } = useHistorialIncidencias();
+
+  const coordenadasEfectivas = coordenadasAjustadas ?? coordenadas;
 
   function reiniciar() {
     setPaso('mapa');
@@ -41,6 +45,7 @@ function App() {
     setDescripcion('');
     setCodigoSeguimiento(null);
     setErrorEnvio(null);
+    setCoordenadasAjustadas(null);
   }
 
   function iniciarReporte() {
@@ -49,15 +54,15 @@ function App() {
   }
 
   async function enviarIncidencia() {
-    if (!tipo || !subtipo || !coordenadas) return;
+    if (!tipo || !subtipo || !coordenadasEfectivas) return;
     setEnviando(true);
     setErrorEnvio(null);
     try {
       const incidencia = await crearIncidencia({
         tipo_id: tipo.id,
         subtipo_id: subtipo.id,
-        latitud: coordenadas.latitud,
-        longitud: coordenadas.longitud,
+        latitud: coordenadasEfectivas.latitud,
+        longitud: coordenadasEfectivas.longitud,
         descripcion_corta: descripcion || undefined,
         uuid_cliente: uuidCliente,
       });
@@ -143,11 +148,15 @@ function App() {
             <p className="text-sm text-gray-600">
               <strong>{tipo.nombre}</strong> · {subtipo.nombre}
             </p>
-            <p className="text-sm text-gray-600">
-              {cargandoUbicacion && 'Obteniendo ubicación GPS…'}
-              {errorUbicacion && `Error de ubicación: ${errorUbicacion}`}
-              {coordenadas && `Ubicación: ${coordenadas.latitud.toFixed(5)}, ${coordenadas.longitud.toFixed(5)}`}
-            </p>
+            {cargandoUbicacion && <p className="text-sm text-gray-600">Obteniendo ubicación GPS…</p>}
+            {errorUbicacion && <p className="text-sm text-red-500">Error de ubicación: {errorUbicacion}</p>}
+            {coordenadasEfectivas && (
+              <MapaSeleccionUbicacion
+                latitud={coordenadasEfectivas.latitud}
+                longitud={coordenadasEfectivas.longitud}
+                onCambiar={(c) => setCoordenadasAjustadas({ ...c, precision_metros: 0 })}
+              />
+            )}
             <textarea
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
@@ -159,7 +168,7 @@ function App() {
             <button
               type="button"
               onClick={enviarIncidencia}
-              disabled={enviando || !coordenadas}
+              disabled={enviando || !coordenadasEfectivas}
               className="rounded-lg bg-secondary px-6 py-3 font-bold text-white disabled:opacity-50"
             >
               {enviando ? 'Enviando…' : 'ENVÍA'}
