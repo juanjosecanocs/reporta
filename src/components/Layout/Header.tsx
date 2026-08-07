@@ -7,7 +7,7 @@ interface Props {
 
 export function Header({ onLogoClick }: Props) {
   return (
-    <header className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-2 shadow-sm">
+    <header className="flex items-center justify-between bg-primary px-4 py-2 shadow-md">
       <button
         type="button"
         onClick={onLogoClick}
@@ -18,7 +18,7 @@ export function Header({ onLogoClick }: Props) {
         <img src={logo} alt="" className="h-9 w-9" />
         <img src={wordmark} alt="REPORTA" className="h-6 w-auto" />
       </button>
-      <span className="hidden text-sm text-gray-500 sm:inline">Incidencias ciudadanas · Almería</span>
+      <span className="hidden text-sm text-white/80 sm:inline">Incidencias ciudadanas · Almería</span>
     </header>
   );
 }
