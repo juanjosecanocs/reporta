@@ -92,7 +92,7 @@ function App() {
 
   return (
     <div className="flex h-svh flex-col">
-      <Header />
+      <Header onLogoClick={paso === 'mapa' ? undefined : reiniciar} />
 
       <main className="relative flex-1">
         {paso === 'mapa' && (
@@ -120,6 +120,7 @@ function App() {
 
         {paso === 'tipo' && (
           <SelectorTipo
+            onVolver={reiniciar}
             onSeleccionar={(t) => {
               setTipo(t);
               setPaso('subtipo');
