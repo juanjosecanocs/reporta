@@ -12,6 +12,10 @@ export const TIPO_ICONOS: Record<string, string> = {
   fauna: '🐦',
   infantiles: '🛝',
   alumbrado: '💡',
+  deportivas: '🏟️',
+  patrimonio: '🏛️',
+  edificios: '🏢',
+  mobiliario: '🚏',
 };
 
 export const SUBTIPO_ICONOS: Record<string, string> = {
@@ -92,6 +96,51 @@ export const SUBTIPO_ICONOS: Record<string, string> = {
   poste_inclinado: '⚠️',
   zona_sin_iluminacion: '🌃',
   cuadro_control_averiado: '🎛️',
+
+  // Instalaciones deportivas
+  aire_acondicionado_deportivo: '❄️',
+  sin_agua_deportivo: '🚿',
+  piscina_inoperativa: '🏊',
+  maquinaria_danada_deportivo: '⚙️',
+  terreno_juego_danado: '⚽',
+  vestuarios_desperfectos: '🚪',
+  accesos_incidencias_deportivo: '🚧',
+  ruidos_vibraciones: '🔊',
+  aseos_inoperativos_deportivo: '🚻',
+  presencia_plagas_deportivo: '🐀',
+
+  // Patrimonio histórico
+  vandalismo_patrimonio: '🔨',
+  grafitis_patrimonio: '🎨',
+  inscripciones_degradadas: '📜',
+  humedades_patrimonio: '💧',
+  desprendimientos_patrimonio: '🪨',
+  cierres_preventivos: '🚫',
+  sin_personal_vigilancia: '👤',
+  erosion_fortificaciones: '🏰',
+  fuente_patrimonio_sin_agua: '⛲',
+  entorno_degradado_patrimonio: '🥀',
+
+  // Edificios públicos
+  cubiertas_edificio: '🏠',
+  desprendimientos_exteriores_edificio: '🧱',
+  falsos_techos: '🔲',
+  aire_acondicionado_edificio: '❄️',
+  mobiliario_danado_edificio: '🪑',
+  accesos_edificio: '♿',
+  ascensores_averiados: '🛗',
+  aseos_inoperativos_edificio: '🚻',
+  presencia_plagas_edificio: '🐀',
+
+  // Mobiliario urbano
+  banco_roto_urbano: '🪑',
+  semaforo_fuera_servicio: '🚦',
+  senal_arrancada: '🛑',
+  mupi_totem_vandalizado: '📰',
+  marquesina_sucia: '🧹',
+  aparca_bicis_roto: '🚲',
+  punto_recarga_fuera_servicio: '🔌',
+  pergola_estropeada: '⛱️',
 };
 
 export const ICONO_POR_DEFECTO = '📍';
