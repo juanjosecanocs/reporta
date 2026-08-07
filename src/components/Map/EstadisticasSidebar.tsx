@@ -6,7 +6,7 @@ export function EstadisticasSidebar() {
   const { total, resueltasEsteMes, tiempoMedioResolucionHoras, cargando } = useEstadisticas();
 
   return (
-    <div className="absolute bottom-4 left-4 z-10 w-64 rounded-lg bg-white shadow-lg">
+    <div className="absolute bottom-24 left-4 z-10 w-64 rounded-lg bg-white shadow-lg sm:bottom-4">
       <button
         type="button"
         onClick={() => setAbierto((v) => !v)}
