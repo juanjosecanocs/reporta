@@ -1,3 +1,4 @@
+import { SUBTIPO_ICONOS, ICONO_POR_DEFECTO } from '../../data/iconos';
 import type { Subtipo, Tipo } from '../../types';
 
 interface Props {
@@ -24,9 +25,16 @@ export function SelectorSubtipo({ tipo, onSeleccionar, onVolver }: Props) {
               key={subtipo.id}
               type="button"
               onClick={() => onSeleccionar(subtipo)}
-              className="rounded-lg border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-800 transition hover:border-secondary hover:bg-orange-50"
+              className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-800 transition hover:border-secondary hover:bg-orange-50"
             >
-              {subtipo.nombre}
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
+                style={{ backgroundColor: tipo.color_primario }}
+              >
+                {SUBTIPO_ICONOS[subtipo.id] ?? ICONO_POR_DEFECTO}
+              </span>
+              <span className="flex-1">{subtipo.nombre}</span>
+              <span className="text-gray-400">›</span>
             </button>
           ))}
         </div>

@@ -1,4 +1,5 @@
 import { useTipos } from '../../hooks/useTipos';
+import { TIPO_ICONOS, ICONO_POR_DEFECTO } from '../../data/iconos';
 import type { Tipo } from '../../types';
 
 interface Props {
@@ -19,9 +20,13 @@ export function SelectorTipo({ onSeleccionar }: Props) {
           type="button"
           onClick={() => onSeleccionar(tipo)}
           className="flex flex-col items-center gap-2 rounded-lg border border-gray-200 p-4 text-center transition hover:shadow-md"
-          style={{ borderColor: tipo.color_primario }}
         >
-          <span className="h-3 w-3 rounded-full" style={{ backgroundColor: tipo.color_primario }} />
+          <span
+            className="flex h-14 w-14 items-center justify-center rounded-full text-2xl"
+            style={{ backgroundColor: tipo.color_primario }}
+          >
+            {TIPO_ICONOS[tipo.id] ?? ICONO_POR_DEFECTO}
+          </span>
           <span className="text-sm font-medium text-gray-800">{tipo.nombre}</span>
         </button>
       ))}
