@@ -22,8 +22,8 @@ export function SelectorTipo({ onSeleccionar }: Props) {
           className="flex flex-col items-center gap-2 rounded-lg border border-gray-200 p-4 text-center transition hover:shadow-md"
         >
           <span
-            className="flex h-14 w-14 items-center justify-center rounded-full text-2xl"
-            style={{ backgroundColor: tipo.color_primario }}
+            className="flex h-14 w-14 items-center justify-center rounded-full border-4 bg-white text-2xl"
+            style={{ borderColor: tipo.color_primario }}
           >
             {TIPO_ICONOS[tipo.id] ?? ICONO_POR_DEFECTO}
           </span>

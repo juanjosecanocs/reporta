@@ -28,8 +28,8 @@ export function SelectorSubtipo({ tipo, onSeleccionar, onVolver }: Props) {
               className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-800 transition hover:border-secondary hover:bg-orange-50"
             >
               <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
-                style={{ backgroundColor: tipo.color_primario }}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[3px] bg-white text-lg"
+                style={{ borderColor: tipo.color_primario }}
               >
                 {SUBTIPO_ICONOS[subtipo.id] ?? ICONO_POR_DEFECTO}
               </span>
