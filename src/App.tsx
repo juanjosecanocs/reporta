@@ -7,13 +7,14 @@ import { SelectorTipo } from './components/Incidencia/SelectorTipo';
 import { SelectorSubtipo } from './components/Incidencia/SelectorSubtipo';
 import { CameraCapture } from './components/Incidencia/CameraCapture';
 import { MapaSeleccionUbicacion } from './components/Incidencia/MapaSeleccionUbicacion';
+import { HistorialIncidencias } from './components/Incidencia/HistorialIncidencias';
 import { useGeolocalizacion, type Coordenadas } from './hooks/useGeolocalizacion';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useHistorialIncidencias } from './hooks/useLocalStorage';
 import { crearIncidencia, adjuntarImagen } from './services/storageService';
 import type { Tipo, Subtipo } from './types';
 
-type Paso = 'mapa' | 'tipo' | 'subtipo' | 'foto' | 'revision' | 'enviado';
+type Paso = 'mapa' | 'tipo' | 'subtipo' | 'foto' | 'revision' | 'enviado' | 'historial';
 
 function useUuidCliente() {
   const [uuid] = useLocalStorage<string>('reporta_uuid_cliente', crypto.randomUUID());
@@ -98,6 +99,13 @@ function App() {
             <EstadisticasSidebar />
             <button
               type="button"
+              onClick={() => setPaso('historial')}
+              className="absolute right-4 top-4 z-10 rounded-full bg-white px-4 py-2 text-sm font-semibold text-primary shadow-lg transition hover:bg-gray-50"
+            >
+              📋 Mi historial
+            </button>
+            <button
+              type="button"
               onClick={iniciarReporte}
               className="absolute bottom-6 right-6 z-10 rounded-full bg-secondary px-6 py-4 font-bold text-white shadow-lg transition hover:brightness-95"
             >
@@ -105,6 +113,8 @@ function App() {
             </button>
           </>
         )}
+
+        {paso === 'historial' && <HistorialIncidencias onVolver={() => setPaso('mapa')} />}
 
         {paso === 'tipo' && (
           <SelectorTipo
@@ -187,6 +197,9 @@ function App() {
               className="mt-4 rounded-lg border border-primary px-6 py-2 font-semibold text-primary"
             >
               Volver al mapa
+            </button>
+            <button type="button" onClick={() => setPaso('historial')} className="text-sm text-primary underline">
+              Ver mi historial
             </button>
           </div>
         )}
