@@ -5,22 +5,45 @@ import { AdminLogin } from './AdminLogin';
 import { AdminDashboard } from './AdminDashboard';
 import { GestionTipos } from './GestionTipos';
 import { GestionMunicipios } from './GestionMunicipios';
+import { FormularioNuevaPassword } from '../components/Cuenta/FormularioNuevaPassword';
 
 type Vista = 'incidencias' | 'tipos' | 'municipios';
 
 export function AdminApp() {
-  const { session, esAdmin, esSuperAdmin, cargando, iniciarSesion, cerrarSesion } = useAdminAuth();
+  const {
+    session,
+    esAdmin,
+    esSuperAdmin,
+    cargando,
+    recoveryEnCurso,
+    iniciarSesion,
+    cerrarSesion,
+    cambiarPassword,
+    solicitarRecuperacion,
+  } = useAdminAuth();
   const [vista, setVista] = useState<Vista>('incidencias');
+  const [mostrarCambiarPassword, setMostrarCambiarPassword] = useState(false);
 
   if (cargando) {
     return <p className="p-8 text-center text-sm text-gray-500">Cargando…</p>;
+  }
+
+  if (recoveryEnCurso) {
+    return (
+      <>
+        <Header onLogoClick={() => window.location.assign('/')} subtitulo="Panel de administración" />
+        <div className="mx-auto max-w-sm p-4">
+          <FormularioNuevaPassword onGuardar={cambiarPassword} />
+        </div>
+      </>
+    );
   }
 
   if (!session) {
     return (
       <>
         <Header onLogoClick={() => window.location.assign('/')} subtitulo="Panel de administración" />
-        <AdminLogin onIniciarSesion={iniciarSesion} />
+        <AdminLogin onIniciarSesion={iniciarSesion} onSolicitarRecuperacion={solicitarRecuperacion} />
       </>
     );
   }
@@ -74,10 +97,25 @@ export function AdminApp() {
             </button>
           )}
         </div>
-        <button type="button" onClick={cerrarSesion} className="text-sm text-gray-500 underline">
-          Cerrar sesión
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setMostrarCambiarPassword((v) => !v)}
+            className="text-sm text-gray-500 underline"
+          >
+            Cambiar contraseña
+          </button>
+          <button type="button" onClick={cerrarSesion} className="text-sm text-gray-500 underline">
+            Cerrar sesión
+          </button>
+        </div>
       </div>
+
+      {mostrarCambiarPassword && (
+        <div className="mx-auto max-w-sm px-4 pt-4">
+          <FormularioNuevaPassword onGuardar={cambiarPassword} />
+        </div>
+      )}
 
       {vista === 'incidencias' && <AdminDashboard />}
       {vista === 'tipos' && <GestionTipos />}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Header } from './components/Layout/Header';
 import { Footer } from './components/Layout/Footer';
 import { MapaIncidencias } from './components/Map/MapaIncidencias';
@@ -8,14 +8,19 @@ import { SelectorSubtipo } from './components/Incidencia/SelectorSubtipo';
 import { CameraCapture } from './components/Incidencia/CameraCapture';
 import { FichaIncidencia } from './components/Incidencia/FichaIncidencia';
 import { HistorialIncidencias } from './components/Incidencia/HistorialIncidencias';
+import { AccesoCiudadano } from './components/Incidencia/AccesoCiudadano';
+import { MiCuenta } from './components/Cuenta/MiCuenta';
+import { FormularioNuevaPassword } from './components/Cuenta/FormularioNuevaPassword';
+import { UserMenu } from './components/Cuenta/UserMenu';
 import { useGeolocalizacion, type Coordenadas } from './hooks/useGeolocalizacion';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useHistorialIncidencias } from './hooks/useLocalStorage';
+import { useCiudadanoAuth } from './hooks/useCiudadanoAuth';
 import { crearIncidencia, adjuntarImagen } from './services/storageService';
 import { useMunicipioActual } from './context/MunicipioContext';
 import type { Tipo, Subtipo } from './types';
 
-type Paso = 'mapa' | 'tipo' | 'subtipo' | 'foto' | 'revision' | 'enviado' | 'historial';
+type Paso = 'mapa' | 'tipo' | 'subtipo' | 'cuenta' | 'mi-cuenta' | 'foto' | 'revision' | 'enviado' | 'historial';
 
 function useUuidCliente() {
   const [uuid] = useLocalStorage<string>('reporta_uuid_cliente', crypto.randomUUID());
@@ -24,6 +29,7 @@ function useUuidCliente() {
 
 function App() {
   const [paso, setPaso] = useState<Paso>('mapa');
+  const [origenCuenta, setOrigenCuenta] = useState<'reporte' | 'perfil'>('reporte');
   const [tipo, setTipo] = useState<Tipo | null>(null);
   const [subtipo, setSubtipo] = useState<Subtipo | null>(null);
   const [foto, setFoto] = useState<Blob | null>(null);
@@ -38,8 +44,32 @@ function App() {
   const { coordenadas, cargando: cargandoUbicacion, error: errorUbicacion, obtenerUbicacion } = useGeolocalizacion();
   const { agregar: agregarAlHistorial } = useHistorialIncidencias();
   const { municipio, cargando: cargandoMunicipio, error: errorMunicipio } = useMunicipioActual();
+  const {
+    session,
+    emailVerificado,
+    nombre: nombreCiudadano,
+    recoveryEnCurso,
+    registrarse,
+    iniciarSesion,
+    cerrarSesion: cerrarSesionCiudadano,
+    reenviarVerificacion,
+    cambiarNombre,
+    cambiarPassword,
+    solicitarRecuperacion,
+  } = useCiudadanoAuth();
 
+  const cuentaVerificada = !!session && emailVerificado;
   const coordenadasEfectivas = coordenadasAjustadas ?? coordenadas;
+
+  // En cuanto la cuenta queda verificada (login o confirmación de correo
+  // mientras se espera en el paso "cuenta"), se continúa según de dónde
+  // venía: a la foto si es parte de un reporte, o de vuelta al mapa si se
+  // abrió desde el menú de cuenta.
+  useEffect(() => {
+    if (paso === 'cuenta' && cuentaVerificada) {
+      setPaso(origenCuenta === 'reporte' ? 'foto' : 'mapa');
+    }
+  }, [paso, cuentaVerificada, origenCuenta]);
 
   function reiniciar() {
     setPaso('mapa');
@@ -65,15 +95,16 @@ function App() {
     try {
       const incidencia = await crearIncidencia({
         municipio_id: municipio.id,
+        usuario_id: cuentaVerificada ? session!.user.id : undefined,
         tipo_id: tipo.id,
         subtipo_id: subtipo.id,
         latitud: coordenadasEfectivas.latitud,
         longitud: coordenadasEfectivas.longitud,
-        descripcion_corta: descripcion || undefined,
+        descripcion_corta: cuentaVerificada ? descripcion || undefined : undefined,
         uuid_cliente: uuidCliente,
       });
 
-      if (foto) {
+      if (cuentaVerificada && foto) {
         await adjuntarImagen(incidencia.id, foto, { originalSizeBytes: foto.size, comprimida: true });
       }
 
@@ -109,22 +140,49 @@ function App() {
     );
   }
 
+  if (recoveryEnCurso) {
+    return (
+      <div className="flex h-svh flex-col">
+        <Header subtitulo={`Incidencias ciudadanas · ${municipio.nombre}`} />
+        <main className="flex flex-1 items-center justify-center p-4">
+          <div className="w-full max-w-md">
+            <FormularioNuevaPassword onGuardar={cambiarPassword} />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-svh flex-col">
-      <Header onLogoClick={paso === 'mapa' ? undefined : reiniciar} />
+      <Header
+        onLogoClick={paso === 'mapa' ? undefined : reiniciar}
+        subtitulo={`Incidencias ciudadanas · ${municipio.nombre}`}
+        accionesDerecha={
+          <UserMenu
+            session={session}
+            nombre={nombreCiudadano}
+            onMiHistorial={() => setPaso('historial')}
+            onCrearCuenta={() => {
+              setOrigenCuenta('perfil');
+              setPaso('cuenta');
+            }}
+            onEditarNombre={() => setPaso('mi-cuenta')}
+            onCambiarPassword={() => setPaso('mi-cuenta')}
+            onCerrarSesion={async () => {
+              await cerrarSesionCiudadano();
+              setPaso('mapa');
+            }}
+          />
+        }
+      />
 
       <main className="relative flex-1">
         {paso === 'mapa' && (
           <>
             <MapaIncidencias />
             <EstadisticasSidebar />
-            <button
-              type="button"
-              onClick={() => setPaso('historial')}
-              className="absolute right-4 top-4 z-10 rounded-full bg-white px-4 py-2 text-sm font-semibold text-primary shadow-lg transition hover:bg-gray-50"
-            >
-              📋 Mi historial
-            </button>
             <button
               type="button"
               onClick={iniciarReporte}
@@ -136,6 +194,20 @@ function App() {
         )}
 
         {paso === 'historial' && <HistorialIncidencias onVolver={() => setPaso('mapa')} />}
+
+        {paso === 'mi-cuenta' && session && (
+          <MiCuenta
+            session={session}
+            nombreActual={nombreCiudadano}
+            onCambiarNombre={cambiarNombre}
+            onCambiarPassword={cambiarPassword}
+            onCerrarSesion={async () => {
+              await cerrarSesionCiudadano();
+              setPaso('mapa');
+            }}
+            onVolver={() => setPaso('mapa')}
+          />
+        )}
 
         {paso === 'tipo' && (
           <SelectorTipo
@@ -153,8 +225,24 @@ function App() {
             onVolver={() => setPaso('tipo')}
             onSeleccionar={(s) => {
               setSubtipo(s);
-              setPaso('foto');
+              setOrigenCuenta('reporte');
+              setPaso(cuentaVerificada ? 'foto' : 'cuenta');
             }}
+          />
+        )}
+
+        {paso === 'cuenta' && (
+          <AccesoCiudadano
+            contexto={origenCuenta}
+            session={session}
+            emailVerificado={emailVerificado}
+            onIniciarSesion={iniciarSesion}
+            onRegistrarse={registrarse}
+            onReenviarVerificacion={reenviarVerificacion}
+            onSolicitarRecuperacion={solicitarRecuperacion}
+            onCerrarSesion={cerrarSesionCiudadano}
+            onContinuarSinCuenta={origenCuenta === 'reporte' ? () => setPaso('revision') : undefined}
+            onVolver={() => setPaso(origenCuenta === 'reporte' ? 'subtipo' : 'mapa')}
           />
         )}
 
@@ -190,11 +278,11 @@ function App() {
                 subtipo={subtipo}
                 latitud={coordenadasEfectivas.latitud}
                 longitud={coordenadasEfectivas.longitud}
-                imagenUrl={fotoPreviewUrl}
+                imagenUrl={cuentaVerificada ? fotoPreviewUrl : null}
                 arrastrable
                 onCambiarUbicacion={(c) => setCoordenadasAjustadas({ ...c, precision_metros: 0 })}
-                comentario={descripcion}
-                onComentarioChange={setDescripcion}
+                comentario={cuentaVerificada ? descripcion : undefined}
+                onComentarioChange={cuentaVerificada ? setDescripcion : undefined}
               />
             )}
             {errorEnvio && <p className="text-sm text-red-500">{errorEnvio}</p>}

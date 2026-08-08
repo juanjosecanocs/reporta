@@ -1,6 +1,7 @@
 export interface Incidencia {
   id: string;
   municipio_id: string;
+  usuario_id?: string | null;
   tipo_id: string;
   subtipo_id: string;
   latitud: number;
