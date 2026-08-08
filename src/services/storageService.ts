@@ -14,6 +14,7 @@ export function generarCodigoSeguimiento(): string {
 }
 
 export interface NuevaIncidenciaPayload {
+  municipio_id: string;
   tipo_id: string;
   subtipo_id: string;
   latitud: number;

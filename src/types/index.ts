@@ -1,5 +1,6 @@
 export interface Incidencia {
   id: string;
+  municipio_id: string;
   tipo_id: string;
   subtipo_id: string;
   latitud: number;
@@ -14,6 +15,16 @@ export interface Incidencia {
   updated_at: string;
   deleted_at?: string | null;
   deleted_reason?: string | null;
+}
+
+export interface Municipio {
+  id: string;
+  slug: string;
+  nombre: string;
+  centro_lat: number;
+  centro_lng: number;
+  zoom_inicial: number;
+  activo: boolean;
 }
 
 export interface Tipo {

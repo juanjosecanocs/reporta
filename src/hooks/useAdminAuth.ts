@@ -6,6 +6,7 @@ export function useAdminAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [sesionCargada, setSesionCargada] = useState(false);
   const [esAdmin, setEsAdmin] = useState(false);
+  const [municipioId, setMunicipioId] = useState<string | null>(null);
   const [comprobandoAdmin, setComprobandoAdmin] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export function useAdminAuth() {
     if (!sesionCargada) return;
     if (!session) {
       setEsAdmin(false);
+      setMunicipioId(null);
       setComprobandoAdmin(false);
       return;
     }
@@ -31,12 +33,13 @@ export function useAdminAuth() {
     setComprobandoAdmin(true);
     supabase
       .from('admin_users')
-      .select('id')
+      .select('id, municipio_id')
       .eq('id', session.user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelado) return;
         setEsAdmin(!!data);
+        setMunicipioId(data?.municipio_id ?? null);
         setComprobandoAdmin(false);
       });
     return () => {
@@ -56,6 +59,8 @@ export function useAdminAuth() {
   return {
     session,
     esAdmin,
+    esSuperAdmin: esAdmin && municipioId === null,
+    municipioId,
     cargando: !sesionCargada || comprobandoAdmin,
     iniciarSesion,
     cerrarSesion,

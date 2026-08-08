@@ -3,8 +3,7 @@ import { Map as MaplibreMap, NavigationControl, Popup, type GeoJSONSource } from
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTipos } from '../../hooks/useTipos';
 import { useIncidencias } from '../../hooks/useIncidencias';
-
-const ALMERIA_CENTRO: [number, number] = [-2.4637, 36.8381];
+import { useMunicipioActual } from '../../context/MunicipioContext';
 
 // OpenFreeMap: tiles vectoriales gratuitos, sin API key ni cuenta.
 // https://openfreemap.org
@@ -29,17 +28,20 @@ export function MapaIncidencias() {
 
   const { tipos } = useTipos();
   const { incidencias } = useIncidencias();
+  const { municipio } = useMunicipioActual();
 
   // Crea el mapa una sola vez y registra las capas de clustering en cuanto
   // el estilo termina de cargar (no se pueden añadir fuentes/capas antes).
+  // No arranca hasta tener el municipio resuelto: su centro/zoom son los del
+  // municipio actual, no un valor fijo de Almería como antes.
   useEffect(() => {
-    if (!contenedorRef.current || mapaRef.current) return;
+    if (!contenedorRef.current || mapaRef.current || !municipio) return;
 
     const mapa = new MaplibreMap({
       container: contenedorRef.current,
       style: ESTILO_MAPA,
-      center: ALMERIA_CENTRO,
-      zoom: 12,
+      center: [municipio.centro_lng, municipio.centro_lat],
+      zoom: municipio.zoom_inicial,
     });
     mapaRef.current = mapa;
     mapa.addControl(new NavigationControl(), 'top-right');
@@ -141,7 +143,7 @@ export function MapaIncidencias() {
       mapaRef.current = null;
       setMapaListo(false);
     };
-  }, []);
+  }, [municipio]);
 
   // Actualiza los datos de la fuente cada vez que cambian las incidencias o
   // los tipos (para el color). MapLibre reagrupa los clusters solo.

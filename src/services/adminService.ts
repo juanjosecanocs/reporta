@@ -6,6 +6,7 @@ export interface FiltrosAdmin {
   tipoId?: string;
   subtipoId?: string;
   incluirBorradas?: boolean;
+  municipioId?: string;
 }
 
 export async function listarIncidenciasAdmin(filtros: FiltrosAdmin = {}): Promise<Incidencia[]> {
@@ -18,6 +19,7 @@ export async function listarIncidenciasAdmin(filtros: FiltrosAdmin = {}): Promis
   if (filtros.estado) query = query.eq('estado', filtros.estado);
   if (filtros.tipoId) query = query.eq('tipo_id', filtros.tipoId);
   if (filtros.subtipoId) query = query.eq('subtipo_id', filtros.subtipoId);
+  if (filtros.municipioId) query = query.eq('municipio_id', filtros.municipioId);
   if (!filtros.incluirBorradas) query = query.is('deleted_at', null);
 
   const { data, error } = await query;

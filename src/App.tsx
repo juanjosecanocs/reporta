@@ -12,6 +12,7 @@ import { useGeolocalizacion, type Coordenadas } from './hooks/useGeolocalizacion
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useHistorialIncidencias } from './hooks/useLocalStorage';
 import { crearIncidencia, adjuntarImagen } from './services/storageService';
+import { useMunicipioActual } from './context/MunicipioContext';
 import type { Tipo, Subtipo } from './types';
 
 type Paso = 'mapa' | 'tipo' | 'subtipo' | 'foto' | 'revision' | 'enviado' | 'historial';
@@ -36,6 +37,7 @@ function App() {
   const uuidCliente = useUuidCliente();
   const { coordenadas, cargando: cargandoUbicacion, error: errorUbicacion, obtenerUbicacion } = useGeolocalizacion();
   const { agregar: agregarAlHistorial } = useHistorialIncidencias();
+  const { municipio, cargando: cargandoMunicipio, error: errorMunicipio } = useMunicipioActual();
 
   const coordenadasEfectivas = coordenadasAjustadas ?? coordenadas;
 
@@ -57,11 +59,12 @@ function App() {
   }
 
   async function enviarIncidencia() {
-    if (!tipo || !subtipo || !coordenadasEfectivas) return;
+    if (!tipo || !subtipo || !coordenadasEfectivas || !municipio) return;
     setEnviando(true);
     setErrorEnvio(null);
     try {
       const incidencia = await crearIncidencia({
+        municipio_id: municipio.id,
         tipo_id: tipo.id,
         subtipo_id: subtipo.id,
         latitud: coordenadasEfectivas.latitud,
@@ -88,6 +91,22 @@ function App() {
     } finally {
       setEnviando(false);
     }
+  }
+
+  if (cargandoMunicipio) {
+    return (
+      <div className="flex h-svh items-center justify-center">
+        <p className="text-sm text-gray-600">Cargando…</p>
+      </div>
+    );
+  }
+
+  if (errorMunicipio || !municipio) {
+    return (
+      <div className="flex h-svh items-center justify-center p-8 text-center">
+        <p className="text-sm text-red-500">{errorMunicipio ?? 'No se pudo determinar el municipio.'}</p>
+      </div>
+    );
   }
 
   return (

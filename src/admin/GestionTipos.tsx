@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAdminAuth } from '../hooks/useAdminAuth';
 import {
   listarTiposAdmin,
   crearTipo,
@@ -176,12 +177,14 @@ function FilaSubtipo({
   hermanos,
   esPrimero,
   esUltimo,
+  esSuperAdmin,
   onCambio,
 }: {
   subtipo: Subtipo;
   hermanos: Subtipo[];
   esPrimero: boolean;
   esUltimo: boolean;
+  esSuperAdmin: boolean;
   onCambio: () => void;
 }) {
   const [editando, setEditando] = useState(false);
@@ -243,9 +246,11 @@ function FilaSubtipo({
         </button>
       </div>
 
-      <button type="button" onClick={() => setEditando(true)} className="rounded border border-primary px-2 py-0.5 text-xs font-semibold text-primary">
-        Editar
-      </button>
+      {esSuperAdmin && (
+        <button type="button" onClick={() => setEditando(true)} className="rounded border border-primary px-2 py-0.5 text-xs font-semibold text-primary">
+          Editar
+        </button>
+      )}
       <button
         type="button"
         onClick={() => accion(async () => cambiarActivoSubtipo(subtipo.id, !subtipo.activo))}
@@ -253,13 +258,15 @@ function FilaSubtipo({
       >
         {subtipo.activo ? 'Desactivar' : 'Activar'}
       </button>
-      <button
-        type="button"
-        onClick={() => accion(async () => eliminarSubtipoDefinitivo(subtipo.id))}
-        className="rounded border border-red-400 px-2 py-0.5 text-xs font-semibold text-red-500"
-      >
-        Eliminar
-      </button>
+      {esSuperAdmin && (
+        <button
+          type="button"
+          onClick={() => accion(async () => eliminarSubtipoDefinitivo(subtipo.id))}
+          className="rounded border border-red-400 px-2 py-0.5 text-xs font-semibold text-red-500"
+        >
+          Eliminar
+        </button>
+      )}
       {error && <p className="w-full text-xs text-red-500">{error}</p>}
     </div>
   );
@@ -270,12 +277,14 @@ function FilaTipo({
   esPrimero,
   esUltimo,
   todosTipos,
+  esSuperAdmin,
   onCambio,
 }: {
   tipo: Tipo;
   esPrimero: boolean;
   esUltimo: boolean;
   todosTipos: Tipo[];
+  esSuperAdmin: boolean;
   onCambio: () => void;
 }) {
   const [expandido, setExpandido] = useState(false);
@@ -331,9 +340,11 @@ function FilaTipo({
           </button>
         </div>
 
-        <button type="button" onClick={() => setEditando((v) => !v)} className="rounded border border-primary px-2 py-1 text-xs font-semibold text-primary">
-          Editar
-        </button>
+        {esSuperAdmin && (
+          <button type="button" onClick={() => setEditando((v) => !v)} className="rounded border border-primary px-2 py-1 text-xs font-semibold text-primary">
+            Editar
+          </button>
+        )}
         <button
           type="button"
           onClick={() => accion(async () => cambiarActivoTipo(tipo.id, !tipo.activo))}
@@ -341,18 +352,20 @@ function FilaTipo({
         >
           {tipo.activo ? 'Desactivar' : 'Activar'}
         </button>
-        <button
-          type="button"
-          onClick={() => accion(async () => eliminarTipoDefinitivo(tipo.id))}
-          className="rounded border border-red-400 px-2 py-1 text-xs font-semibold text-red-500"
-        >
-          Eliminar
-        </button>
+        {esSuperAdmin && (
+          <button
+            type="button"
+            onClick={() => accion(async () => eliminarTipoDefinitivo(tipo.id))}
+            className="rounded border border-red-400 px-2 py-1 text-xs font-semibold text-red-500"
+          >
+            Eliminar
+          </button>
+        )}
       </div>
 
       {error && <p className="px-3 pb-2 text-xs text-red-500">{error}</p>}
 
-      {editando && (
+      {editando && esSuperAdmin && (
         <div className="px-3 pb-3">
           <FormularioTipo
             inicial={{
@@ -384,29 +397,31 @@ function FilaTipo({
               hermanos={subtipos}
               esPrimero={i === 0}
               esUltimo={i === subtipos.length - 1}
+              esSuperAdmin={esSuperAdmin}
               onCambio={onCambio}
             />
           ))}
 
-          {creandoSubtipo ? (
-            <FormularioSubtipo
-              inicial={SUBTIPO_VACIO}
-              onGuardar={async (datos) => {
-                await crearSubtipo(tipo.id, datos);
-                setCreandoSubtipo(false);
-                onCambio();
-              }}
-              onCancelar={() => setCreandoSubtipo(false)}
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setCreandoSubtipo(true)}
-              className="self-start rounded-lg border border-dashed border-secondary px-3 py-1 text-xs font-semibold text-secondary"
-            >
-              + Nuevo subtipo
-            </button>
-          )}
+          {esSuperAdmin &&
+            (creandoSubtipo ? (
+              <FormularioSubtipo
+                inicial={SUBTIPO_VACIO}
+                onGuardar={async (datos) => {
+                  await crearSubtipo(tipo.id, datos);
+                  setCreandoSubtipo(false);
+                  onCambio();
+                }}
+                onCancelar={() => setCreandoSubtipo(false)}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCreandoSubtipo(true)}
+                className="self-start rounded-lg border border-dashed border-secondary px-3 py-1 text-xs font-semibold text-secondary"
+              >
+                + Nuevo subtipo
+              </button>
+            ))}
         </div>
       )}
     </div>
@@ -414,6 +429,7 @@ function FilaTipo({
 }
 
 export function GestionTipos() {
+  const { esSuperAdmin } = useAdminAuth();
   const [tipos, setTipos] = useState<Tipo[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -441,7 +457,9 @@ export function GestionTipos() {
     <div className="mx-auto max-w-4xl p-4">
       <h2 className="mb-1 text-lg font-semibold text-gray-800">Tipos y subtipos</h2>
       <p className="mb-4 text-sm text-gray-500">
-        Crea, edita, reordena o desactiva las categorías de incidencias. Los cambios se reflejan al momento en la app.
+        {esSuperAdmin
+          ? 'Crea, edita, reordena o desactiva las categorías de incidencias. Los cambios se reflejan al momento en la app.'
+          : 'Puedes activar, desactivar y reordenar tipos y subtipos. Crear, editar o eliminar categorías está reservado a un super-administrador, porque son compartidas por todos los municipios.'}
       </p>
 
       {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
@@ -457,33 +475,36 @@ export function GestionTipos() {
               esPrimero={i === 0}
               esUltimo={i === tiposOrdenados.length - 1}
               todosTipos={tiposOrdenados}
+              esSuperAdmin={esSuperAdmin}
               onCambio={cargar}
             />
           ))}
         </div>
       )}
 
-      <div className="mt-4">
-        {creandoTipo ? (
-          <FormularioTipo
-            inicial={TIPO_VACIO}
-            onGuardar={async (datos) => {
-              await crearTipo(datos);
-              setCreandoTipo(false);
-              cargar();
-            }}
-            onCancelar={() => setCreandoTipo(false)}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setCreandoTipo(true)}
-            className="rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary"
-          >
-            + Nuevo tipo
-          </button>
-        )}
-      </div>
+      {esSuperAdmin && (
+        <div className="mt-4">
+          {creandoTipo ? (
+            <FormularioTipo
+              inicial={TIPO_VACIO}
+              onGuardar={async (datos) => {
+                await crearTipo(datos);
+                setCreandoTipo(false);
+                cargar();
+              }}
+              onCancelar={() => setCreandoTipo(false)}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCreandoTipo(true)}
+              className="rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary"
+            >
+              + Nuevo tipo
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

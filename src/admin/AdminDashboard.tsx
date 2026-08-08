@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTipos } from '../hooks/useTipos';
+import { useAdminAuth } from '../hooks/useAdminAuth';
 import {
   listarIncidenciasAdmin,
   actualizarEstado,
@@ -7,27 +8,41 @@ import {
   restaurarIncidencia,
   type FiltrosAdmin,
 } from '../services/adminService';
+import { listarMunicipiosActivos } from '../services/municipioService';
 import { SUBTIPO_ICONOS, TIPO_ICONOS, ICONO_POR_DEFECTO } from '../data/iconos';
 import { FichaIncidencia } from '../components/Incidencia/FichaIncidencia';
-import type { Incidencia } from '../types';
+import type { Incidencia, Municipio } from '../types';
 
 const ESTADOS: Incidencia['estado'][] = ['pendiente', 'revisada', 'resuelto', 'rechazado'];
 
 export function AdminDashboard() {
   const { tipos } = useTipos();
+  const { esSuperAdmin } = useAdminAuth();
   const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroSubtipo, setFiltroSubtipo] = useState('');
+  const [filtroMunicipio, setFiltroMunicipio] = useState('');
   const [incluirBorradas, setIncluirBorradas] = useState(false);
 
   const [eliminando, setEliminando] = useState<{ id: string; motivo: string } | null>(null);
   const [fichaAbierta, setFichaAbierta] = useState<Incidencia | null>(null);
 
   const subtiposDelTipo = tipos.find((t) => t.id === filtroTipo)?.subtipos ?? [];
+  const municipioPorId = new Map(municipios.map((m) => [m.id, m]));
+
+  useEffect(() => {
+    if (!esSuperAdmin) return;
+    listarMunicipiosActivos()
+      .then(setMunicipios)
+      .catch(() => {
+        /* el selector de municipio es una comodidad, no crítico si falla */
+      });
+  }, [esSuperAdmin]);
 
   async function cargar() {
     setCargando(true);
@@ -37,6 +52,7 @@ export function AdminDashboard() {
         estado: filtroEstado || undefined,
         tipoId: filtroTipo || undefined,
         subtipoId: filtroSubtipo || undefined,
+        municipioId: esSuperAdmin ? filtroMunicipio || undefined : undefined,
         incluirBorradas,
       };
       setIncidencias(await listarIncidenciasAdmin(filtros));
@@ -50,7 +66,7 @@ export function AdminDashboard() {
   useEffect(() => {
     cargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtroEstado, filtroTipo, filtroSubtipo, incluirBorradas]);
+  }, [filtroEstado, filtroTipo, filtroSubtipo, filtroMunicipio, incluirBorradas]);
 
   async function cambiarEstado(id: string, estado: Incidencia['estado']) {
     setIncidencias((prev) => prev.map((i) => (i.id === id ? { ...i, estado } : i)));
@@ -88,6 +104,20 @@ export function AdminDashboard() {
   return (
     <div className="mx-auto max-w-5xl p-4">
       <div className="mb-4 flex flex-wrap gap-3">
+        {esSuperAdmin && (
+          <select
+            value={filtroMunicipio}
+            onChange={(e) => setFiltroMunicipio(e.target.value)}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value="">Todos los municipios</option>
+            {municipios.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nombre}
+              </option>
+            ))}
+          </select>
+        )}
         <select
           value={filtroEstado}
           onChange={(e) => setFiltroEstado(e.target.value)}
@@ -183,6 +213,7 @@ export function AdminDashboard() {
                   <p className="text-xs text-gray-500">
                     {new Date(inc.created_at).toLocaleString('es-ES')} · {inc.codigo_seguimiento} ·{' '}
                     {inc.latitud.toFixed(4)}, {inc.longitud.toFixed(4)}
+                    {esSuperAdmin && ` · ${municipioPorId.get(inc.municipio_id)?.nombre ?? inc.municipio_id}`}
                   </p>
                   {inc.descripcion_corta && <p className="mt-1 text-xs text-gray-600">{inc.descripcion_corta}</p>}
                   {borrada && (

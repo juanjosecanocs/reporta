@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { useMunicipioActual } from '../context/MunicipioContext';
 
 interface Estadisticas {
   total: number | null;
@@ -10,6 +11,7 @@ interface Estadisticas {
 
 /** Estadísticas agregadas para el panel del mapa, calculadas con consultas dedicadas (no dependen del listado de pines). */
 export function useEstadisticas() {
+  const { municipio } = useMunicipioActual();
   const [estado, setEstado] = useState<Estadisticas>({
     total: null,
     resueltasEsteMes: null,
@@ -18,6 +20,7 @@ export function useEstadisticas() {
   });
 
   useEffect(() => {
+    if (!municipio) return;
     let cancelado = false;
 
     async function cargar() {
@@ -26,15 +29,20 @@ export function useEstadisticas() {
       inicioMes.setHours(0, 0, 0, 0);
 
       const [totalRes, resueltasRes, tiemposRes] = await Promise.all([
-        supabase.from('incidencias_anonimas').select('id', { count: 'exact', head: true }),
         supabase
           .from('incidencias_anonimas')
           .select('id', { count: 'exact', head: true })
+          .eq('municipio_id', municipio!.id),
+        supabase
+          .from('incidencias_anonimas')
+          .select('id', { count: 'exact', head: true })
+          .eq('municipio_id', municipio!.id)
           .eq('estado', 'resuelto')
           .gte('updated_at', inicioMes.toISOString()),
         supabase
           .from('incidencias_anonimas')
           .select('created_at, updated_at')
+          .eq('municipio_id', municipio!.id)
           .eq('estado', 'resuelto')
           .order('updated_at', { ascending: false })
           .limit(500),
@@ -59,7 +67,7 @@ export function useEstadisticas() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [municipio]);
 
   return estado;
 }

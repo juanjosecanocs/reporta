@@ -4,11 +4,12 @@ import { Header } from '../components/Layout/Header';
 import { AdminLogin } from './AdminLogin';
 import { AdminDashboard } from './AdminDashboard';
 import { GestionTipos } from './GestionTipos';
+import { GestionMunicipios } from './GestionMunicipios';
 
-type Vista = 'incidencias' | 'tipos';
+type Vista = 'incidencias' | 'tipos' | 'municipios';
 
 export function AdminApp() {
-  const { session, esAdmin, cargando, iniciarSesion, cerrarSesion } = useAdminAuth();
+  const { session, esAdmin, esSuperAdmin, cargando, iniciarSesion, cerrarSesion } = useAdminAuth();
   const [vista, setVista] = useState<Vista>('incidencias');
 
   if (cargando) {
@@ -61,13 +62,26 @@ export function AdminApp() {
           >
             Tipos y subtipos
           </button>
+          {esSuperAdmin && (
+            <button
+              type="button"
+              onClick={() => setVista('municipios')}
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                vista === 'municipios' ? 'bg-primary text-white' : 'text-gray-500'
+              }`}
+            >
+              Municipios
+            </button>
+          )}
         </div>
         <button type="button" onClick={cerrarSesion} className="text-sm text-gray-500 underline">
           Cerrar sesión
         </button>
       </div>
 
-      {vista === 'incidencias' ? <AdminDashboard /> : <GestionTipos />}
+      {vista === 'incidencias' && <AdminDashboard />}
+      {vista === 'tipos' && <GestionTipos />}
+      {vista === 'municipios' && esSuperAdmin && <GestionMunicipios />}
     </>
   );
 }

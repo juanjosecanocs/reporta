@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { useMunicipioActual } from '../context/MunicipioContext';
 import type { Incidencia } from '../types';
 
 interface EstadoIncidencias {
@@ -8,8 +9,9 @@ interface EstadoIncidencias {
   error: string | null;
 }
 
-/** Incidencias públicas (no borradas) para pintar como pines en el mapa. */
+/** Incidencias públicas (no borradas) del municipio actual, para pintar como pines en el mapa. */
 export function useIncidencias() {
+  const { municipio } = useMunicipioActual();
   const [estado, setEstado] = useState<EstadoIncidencias>({
     incidencias: [],
     cargando: true,
@@ -17,12 +19,14 @@ export function useIncidencias() {
   });
 
   useEffect(() => {
+    if (!municipio) return;
     let cancelado = false;
 
     async function cargar() {
       const { data, error } = await supabase
         .from('incidencias_anonimas')
         .select('*')
+        .eq('municipio_id', municipio!.id)
         .order('created_at', { ascending: false })
         .limit(500);
 
@@ -39,7 +43,7 @@ export function useIncidencias() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [municipio]);
 
   return estado;
 }
