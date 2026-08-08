@@ -6,6 +6,8 @@ import {
   actualizarEstado,
   eliminarIncidencia,
   restaurarIncidencia,
+  obtenerEmailUsuario,
+  contarIncidenciasEliminadasDeUsuario,
   type FiltrosAdmin,
 } from '../services/adminService';
 import { listarMunicipiosActivos } from '../services/municipioService';
@@ -31,6 +33,8 @@ export function AdminDashboard() {
 
   const [eliminando, setEliminando] = useState<{ id: string; motivo: string } | null>(null);
   const [fichaAbierta, setFichaAbierta] = useState<Incidencia | null>(null);
+  const [trazabilidad, setTrazabilidad] = useState<{ email: string | null; reincidencias: number } | null>(null);
+  const [cargandoTrazabilidad, setCargandoTrazabilidad] = useState(false);
 
   const subtiposDelTipo = tipos.find((t) => t.id === filtroTipo)?.subtipos ?? [];
   const municipioPorId = new Map(municipios.map((m) => [m.id, m]));
@@ -67,6 +71,35 @@ export function AdminDashboard() {
     cargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtroEstado, filtroTipo, filtroSubtipo, filtroMunicipio, incluirBorradas]);
+
+  // Trazabilidad de la ficha abierta: solo tiene sentido si la incidencia
+  // viene de un usuario registrado y verificado (Fase 3); una anónima no
+  // tiene a quién identificar.
+  useEffect(() => {
+    if (!fichaAbierta?.usuario_id) {
+      setTrazabilidad(null);
+      return;
+    }
+    let cancelado = false;
+    setCargandoTrazabilidad(true);
+    Promise.all([
+      obtenerEmailUsuario(fichaAbierta.usuario_id),
+      contarIncidenciasEliminadasDeUsuario(fichaAbierta.usuario_id, fichaAbierta.id),
+    ])
+      .then(([email, reincidencias]) => {
+        if (cancelado) return;
+        setTrazabilidad({ email, reincidencias });
+      })
+      .catch(() => {
+        if (!cancelado) setTrazabilidad(null);
+      })
+      .finally(() => {
+        if (!cancelado) setCargandoTrazabilidad(false);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [fichaAbierta?.id, fichaAbierta?.usuario_id]);
 
   async function cambiarEstado(id: string, estado: Incidencia['estado']) {
     setIncidencias((prev) => prev.map((i) => (i.id === id ? { ...i, estado } : i)));
@@ -214,6 +247,7 @@ export function AdminDashboard() {
                     {new Date(inc.created_at).toLocaleString('es-ES')} · {inc.codigo_seguimiento} ·{' '}
                     {inc.latitud.toFixed(4)}, {inc.longitud.toFixed(4)}
                     {esSuperAdmin && ` · ${municipioPorId.get(inc.municipio_id)?.nombre ?? inc.municipio_id}`}
+                    {inc.usuario_id && <span className="ml-1 font-semibold text-emerald-700">· ✓ verificada</span>}
                   </p>
                   {inc.descripcion_corta && <p className="mt-1 text-xs text-gray-600">{inc.descripcion_corta}</p>}
                   {borrada && (
@@ -325,6 +359,27 @@ export function AdminDashboard() {
               imagenUrl={fichaAbierta.imagen_url}
               comentario={fichaAbierta.descripcion_corta}
             />
+
+            {fichaAbierta.usuario_id && (
+              <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                {cargandoTrazabilidad ? (
+                  'Comprobando quién la reportó…'
+                ) : (
+                  <>
+                    <p>
+                      ✓ Reportada por usuario verificado{trazabilidad?.email ? `: ${trazabilidad.email}` : ''}
+                    </p>
+                    {!!trazabilidad?.reincidencias && (
+                      <p className="mt-1 font-semibold text-red-700">
+                        ⚠️ Este usuario tiene otras {trazabilidad.reincidencias} incidencia
+                        {trazabilidad.reincidencias === 1 ? '' : 's'} eliminada
+                        {trazabilidad.reincidencias === 1 ? '' : 's'}.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             {fichaAbierta.deleted_at && (
               <p className="mt-3 text-sm font-semibold text-red-600">

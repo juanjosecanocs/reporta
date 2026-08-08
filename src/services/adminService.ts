@@ -50,3 +50,22 @@ export async function restaurarIncidencia(id: string): Promise<void> {
     .eq('id', id);
   if (error) throw error;
 }
+
+/** Correo de quien publicó una incidencia con foto/comentario (solo admins, ver migración 016). */
+export async function obtenerEmailUsuario(usuarioId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('admin_email_usuario', { uid: usuarioId });
+  if (error) throw error;
+  return data;
+}
+
+/** Cuántas incidencias eliminadas (contenido inadecuado u otro motivo) tiene ya ese mismo usuario. */
+export async function contarIncidenciasEliminadasDeUsuario(usuarioId: string, excluirId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('incidencias_anonimas')
+    .select('id', { count: 'exact', head: true })
+    .eq('usuario_id', usuarioId)
+    .not('deleted_at', 'is', null)
+    .neq('id', excluirId);
+  if (error) throw error;
+  return count ?? 0;
+}
