@@ -2,6 +2,7 @@ export interface Incidencia {
   id: string;
   municipio_id: string;
   usuario_id?: string | null;
+  nombre_reportante?: string | null;
   tipo_id: string;
   subtipo_id: string;
   latitud: number;
@@ -16,6 +17,18 @@ export interface Incidencia {
   updated_at: string;
   deleted_at?: string | null;
   deleted_reason?: string | null;
+}
+
+export interface UsuarioBloqueado {
+  id: string;
+  usuario_id: string;
+  municipio_id: string | null;
+  motivo: string;
+  incidencia_id: string | null;
+  bloqueado_por: string;
+  created_at: string;
+  desbloqueado_at: string | null;
+  desbloqueado_por: string | null;
 }
 
 export interface Municipio {

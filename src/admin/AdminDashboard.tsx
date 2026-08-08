@@ -11,6 +11,7 @@ import {
   type FiltrosAdmin,
 } from '../services/adminService';
 import { listarMunicipiosActivos } from '../services/municipioService';
+import { crearBloqueo } from '../services/bloqueosService';
 import { SUBTIPO_ICONOS, TIPO_ICONOS, ICONO_POR_DEFECTO } from '../data/iconos';
 import { FichaIncidencia } from '../components/Incidencia/FichaIncidencia';
 import type { Incidencia, Municipio } from '../types';
@@ -35,6 +36,11 @@ export function AdminDashboard() {
   const [fichaAbierta, setFichaAbierta] = useState<Incidencia | null>(null);
   const [trazabilidad, setTrazabilidad] = useState<{ email: string | null; reincidencias: number } | null>(null);
   const [cargandoTrazabilidad, setCargandoTrazabilidad] = useState(false);
+  const [bloqueando, setBloqueando] = useState(false);
+  const [motivoBloqueo, setMotivoBloqueo] = useState('');
+  const [bloqueoGlobal, setBloqueoGlobal] = useState(false);
+  const [bloqueoHecho, setBloqueoHecho] = useState(false);
+  const [errorBloqueo, setErrorBloqueo] = useState<string | null>(null);
 
   const subtiposDelTipo = tipos.find((t) => t.id === filtroTipo)?.subtipos ?? [];
   const municipioPorId = new Map(municipios.map((m) => [m.id, m]));
@@ -100,6 +106,31 @@ export function AdminDashboard() {
       cancelado = true;
     };
   }, [fichaAbierta?.id, fichaAbierta?.usuario_id]);
+
+  useEffect(() => {
+    setBloqueando(false);
+    setMotivoBloqueo('');
+    setBloqueoGlobal(false);
+    setBloqueoHecho(false);
+    setErrorBloqueo(null);
+  }, [fichaAbierta?.id]);
+
+  async function confirmarBloqueo() {
+    if (!fichaAbierta?.usuario_id || !motivoBloqueo.trim()) return;
+    setErrorBloqueo(null);
+    try {
+      await crearBloqueo({
+        usuarioId: fichaAbierta.usuario_id,
+        municipioId: esSuperAdmin && bloqueoGlobal ? null : fichaAbierta.municipio_id,
+        motivo: motivoBloqueo.trim(),
+        incidenciaId: fichaAbierta.id,
+      });
+      setBloqueando(false);
+      setBloqueoHecho(true);
+    } catch (err) {
+      setErrorBloqueo(err instanceof Error ? err.message : 'Error bloqueando al usuario');
+    }
+  }
 
   async function cambiarEstado(id: string, estado: Incidencia['estado']) {
     setIncidencias((prev) => prev.map((i) => (i.id === id ? { ...i, estado } : i)));
@@ -247,7 +278,11 @@ export function AdminDashboard() {
                     {new Date(inc.created_at).toLocaleString('es-ES')} · {inc.codigo_seguimiento} ·{' '}
                     {inc.latitud.toFixed(4)}, {inc.longitud.toFixed(4)}
                     {esSuperAdmin && ` · ${municipioPorId.get(inc.municipio_id)?.nombre ?? inc.municipio_id}`}
-                    {inc.usuario_id && <span className="ml-1 font-semibold text-emerald-700">· ✓ verificada</span>}
+                    {inc.usuario_id && (
+                      <span className="ml-1 font-semibold text-emerald-700">
+                        · ✓ {inc.nombre_reportante || 'verificada'}
+                      </span>
+                    )}
                   </p>
                   {inc.descripcion_corta && <p className="mt-1 text-xs text-gray-600">{inc.descripcion_corta}</p>}
                   {borrada && (
@@ -367,7 +402,8 @@ export function AdminDashboard() {
                 ) : (
                   <>
                     <p>
-                      ✓ Reportada por usuario verificado{trazabilidad?.email ? `: ${trazabilidad.email}` : ''}
+                      ✓ Reportada por {fichaAbierta.nombre_reportante || 'usuario verificado'}
+                      {trazabilidad?.email ? ` (${trazabilidad.email})` : ''}
                     </p>
                     {!!trazabilidad?.reincidencias && (
                       <p className="mt-1 font-semibold text-red-700">
@@ -375,6 +411,56 @@ export function AdminDashboard() {
                         {trazabilidad.reincidencias === 1 ? '' : 's'} eliminada
                         {trazabilidad.reincidencias === 1 ? '' : 's'}.
                       </p>
+                    )}
+
+                    {bloqueoHecho ? (
+                      <p className="mt-2 font-semibold text-red-700">🚫 Usuario bloqueado.</p>
+                    ) : bloqueando ? (
+                      <div className="mt-2 flex flex-col gap-2">
+                        <input
+                          autoFocus
+                          value={motivoBloqueo}
+                          onChange={(e) => setMotivoBloqueo(e.target.value)}
+                          placeholder="Motivo del bloqueo"
+                          className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-800"
+                        />
+                        {esSuperAdmin && (
+                          <label className="flex items-center gap-2 text-xs text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={bloqueoGlobal}
+                              onChange={(e) => setBloqueoGlobal(e.target.checked)}
+                            />
+                            Bloqueo global (todos los municipios), no solo este
+                          </label>
+                        )}
+                        {errorBloqueo && <p className="text-xs text-red-600">{errorBloqueo}</p>}
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={confirmarBloqueo}
+                            disabled={!motivoBloqueo.trim()}
+                            className="rounded-lg bg-red-600 px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                          >
+                            Confirmar bloqueo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBloqueando(false)}
+                            className="text-xs text-gray-500 underline"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setBloqueando(true)}
+                        className="mt-2 rounded-lg border border-red-400 px-2 py-1 text-xs font-semibold text-red-600"
+                      >
+                        Bloquear usuario
+                      </button>
                     )}
                   </>
                 )}

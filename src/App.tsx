@@ -96,6 +96,7 @@ function App() {
       const incidencia = await crearIncidencia({
         municipio_id: municipio.id,
         usuario_id: cuentaVerificada ? session!.user.id : undefined,
+        nombre_reportante: cuentaVerificada ? nombreCiudadano || undefined : undefined,
         tipo_id: tipo.id,
         subtipo_id: subtipo.id,
         latitud: coordenadasEfectivas.latitud,

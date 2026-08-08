@@ -5,9 +5,10 @@ import { AdminLogin } from './AdminLogin';
 import { AdminDashboard } from './AdminDashboard';
 import { GestionTipos } from './GestionTipos';
 import { GestionMunicipios } from './GestionMunicipios';
+import { GestionBloqueos } from './GestionBloqueos';
 import { FormularioNuevaPassword } from '../components/Cuenta/FormularioNuevaPassword';
 
-type Vista = 'incidencias' | 'tipos' | 'municipios';
+type Vista = 'incidencias' | 'tipos' | 'municipios' | 'bloqueados';
 
 export function AdminApp() {
   const {
@@ -85,6 +86,15 @@ export function AdminApp() {
           >
             Tipos y subtipos
           </button>
+          <button
+            type="button"
+            onClick={() => setVista('bloqueados')}
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+              vista === 'bloqueados' ? 'bg-primary text-white' : 'text-gray-500'
+            }`}
+          >
+            Usuarios bloqueados
+          </button>
           {esSuperAdmin && (
             <button
               type="button"
@@ -119,6 +129,7 @@ export function AdminApp() {
 
       {vista === 'incidencias' && <AdminDashboard />}
       {vista === 'tipos' && <GestionTipos />}
+      {vista === 'bloqueados' && <GestionBloqueos />}
       {vista === 'municipios' && esSuperAdmin && <GestionMunicipios />}
     </>
   );

@@ -147,6 +147,12 @@ export function MapaIncidencias() {
         const comentario = props.descripcion
           ? `<p title="${escapeHtml(props.descripcion)}" style="margin:6px 0 0; color:#333; white-space:pre-wrap; word-break:break-word;">${escapeHtml(props.descripcion)}</p>`
           : '';
+        // Solo el nombre, nunca el correo: en el mapa público basta con
+        // saber que hay una persona identificada detrás, no hace falta
+        // exponer más dato que ese.
+        const reportante = props.nombreReportante
+          ? `<p style="margin:6px 0 0; color:#1E7A46; font-weight:600;">✓ ${escapeHtml(props.nombreReportante)}</p>`
+          : '';
 
         popupRef.current?.remove();
         popupRef.current = new Popup({ offset: 14 })
@@ -158,6 +164,7 @@ export function MapaIncidencias() {
               <span style="color: #666;">${escapeHtml(props.fecha)} · ${escapeHtml(props.estado)}</span>
               ${miniatura}
               ${comentario}
+              ${reportante}
             </div>
           `)
           .addTo(mapa);
@@ -217,6 +224,7 @@ export function MapaIncidencias() {
             verificado: !!incidencia.usuario_id,
             imagenUrl: incidencia.imagen_url ?? '',
             descripcion: incidencia.descripcion_corta ?? '',
+            nombreReportante: incidencia.nombre_reportante ?? '',
           },
         };
       }),
