@@ -13,6 +13,7 @@ const FUENTE_INCIDENCIAS = 'incidencias';
 const CAPA_CLUSTERS = 'clusters';
 const CAPA_CLUSTER_CONTEO = 'cluster-count';
 const CAPA_PUNTO = 'punto-incidencia';
+const CAPA_VERIFICADO = 'punto-verificado';
 
 function escapeHtml(texto: string): string {
   const div = document.createElement('div');
@@ -98,6 +99,29 @@ export function MapaIncidencias() {
         },
       });
 
+      // Insignia de verificación: solo las incidencias de un usuario
+      // registrado y verificado (las únicas que pueden llevar foto o
+      // comentario) llevan la marca ✓, para distinguirlas de un vistazo de
+      // las anónimas.
+      mapa.addLayer({
+        id: CAPA_VERIFICADO,
+        type: 'symbol',
+        source: FUENTE_INCIDENCIAS,
+        filter: ['all', ['!', ['has', 'point_count']], ['==', ['get', 'verificado'], true]],
+        layout: {
+          'text-field': '✓',
+          'text-size': 9,
+          'text-offset': [0.75, -0.75],
+          'text-allow-overlap': true,
+          'text-ignore-placement': true,
+        },
+        paint: {
+          'text-color': '#ffffff',
+          'text-halo-color': '#1E7A46',
+          'text-halo-width': 2,
+        },
+      });
+
       mapa.on('click', CAPA_CLUSTERS, async (e) => {
         const feature = mapa.queryRenderedFeatures(e.point, { layers: [CAPA_CLUSTERS] })[0];
         const clusterId = feature?.properties?.cluster_id;
@@ -113,14 +137,27 @@ export function MapaIncidencias() {
         if (!feature || feature.geometry.type !== 'Point') return;
         const props = feature.properties as Record<string, string>;
 
+        // Ficha básica: una incidencia anónima solo tiene tipo/subtipo/
+        // ubicación (igual que siempre). Si viene de un usuario verificado
+        // y tiene foto o comentario, se añaden aquí sin abrir la ficha
+        // completa (esa queda solo para el panel de admin).
+        const miniatura = props.imagenUrl
+          ? `<img src="${escapeHtml(props.imagenUrl)}" alt="" style="width:100%; max-height:110px; object-fit:cover; border-radius:6px; margin-top:6px;" />`
+          : '';
+        const comentario = props.descripcion
+          ? `<p title="${escapeHtml(props.descripcion)}" style="margin:6px 0 0; color:#333; white-space:pre-wrap; word-break:break-word;">${escapeHtml(props.descripcion)}</p>`
+          : '';
+
         popupRef.current?.remove();
         popupRef.current = new Popup({ offset: 14 })
           .setLngLat(feature.geometry.coordinates as [number, number])
           .setHTML(`
-            <div style="font-family: sans-serif; font-size: 13px; min-width: 160px;">
+            <div style="font-family: sans-serif; font-size: 13px; min-width: 160px; max-width: 220px;">
               <strong>${escapeHtml(props.tipoNombre)}</strong><br/>
               ${escapeHtml(props.subtipoNombre)}<br/>
               <span style="color: #666;">${escapeHtml(props.fecha)} · ${escapeHtml(props.estado)}</span>
+              ${miniatura}
+              ${comentario}
             </div>
           `)
           .addTo(mapa);
@@ -175,6 +212,11 @@ export function MapaIncidencias() {
             subtipoNombre: subtipo?.nombre ?? incidencia.subtipo_id,
             estado: incidencia.estado,
             fecha,
+            // Solo un usuario registrado y verificado puede tener foto o
+            // comentario (Fase 3) -- usuario_id es la marca de verificación.
+            verificado: !!incidencia.usuario_id,
+            imagenUrl: incidencia.imagen_url ?? '',
+            descripcion: incidencia.descripcion_corta ?? '',
           },
         };
       }),

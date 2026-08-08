@@ -3,6 +3,11 @@ import { MapaSeleccionUbicacion } from './MapaSeleccionUbicacion';
 import { SUBTIPO_ICONOS, TIPO_ICONOS, ICONO_POR_DEFECTO } from '../../data/iconos';
 import type { Tipo, Subtipo } from '../../types';
 
+// Debe coincidir con el CHECK de la migración 015_limite_comentario.sql.
+// Reporta no es una red social: el comentario explica la incidencia, no
+// admite texto extenso.
+export const LIMITE_COMENTARIO = 300;
+
 interface Props {
   tipo?: Tipo;
   subtipo?: Subtipo;
@@ -68,13 +73,19 @@ export function FichaIncidencia({
       />
 
       {onComentarioChange ? (
-        <textarea
-          value={comentario ?? ''}
-          onChange={(e) => onComentarioChange(e.target.value)}
-          placeholder="Descripción opcional"
-          className="rounded-lg border border-gray-300 p-2 text-sm"
-          rows={3}
-        />
+        <div>
+          <textarea
+            value={comentario ?? ''}
+            onChange={(e) => onComentarioChange(e.target.value.slice(0, LIMITE_COMENTARIO))}
+            maxLength={LIMITE_COMENTARIO}
+            placeholder="Descripción opcional"
+            className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+            rows={3}
+          />
+          <p className="mt-1 text-right text-xs text-gray-400">
+            {(comentario ?? '').length}/{LIMITE_COMENTARIO}
+          </p>
+        </div>
       ) : comentario ? (
         <p className="rounded-lg bg-gray-50 p-2 text-sm text-gray-700">{comentario}</p>
       ) : (
