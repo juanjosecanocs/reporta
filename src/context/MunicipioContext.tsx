@@ -5,18 +5,21 @@ import type { Municipio } from '../types';
 const SLUG_POR_DEFECTO = import.meta.env.VITE_DEFAULT_MUNICIPIO_SLUG || 'almeria';
 
 /**
- * Resuelve el slug de municipio a partir del hostname. Mientras no exista
- * dominio propio (Fase 0/5), reporta-almeria.netlify.app y localhost no
- * llevan subdominio de municipio real, así que caen al slug por defecto.
+ * Resuelve el slug de municipio a partir del hostname. localhost, IPs,
+ * *.netlify.app y el dominio raíz propio (app-reporta.es, sin subdominio de
+ * municipio) caen al slug por defecto; un subdominio real bajo el dominio
+ * propio (almeria.app-reporta.es) usa ese subdominio como slug (Fase 5).
  */
 function resolverSlugDesdeHostname(hostname: string): string {
+  const partes = hostname.split('.');
   const esHostSinMunicipio =
     hostname === 'localhost' ||
     /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) ||
-    hostname.endsWith('.netlify.app');
+    hostname.endsWith('.netlify.app') ||
+    partes.length <= 2;
 
   if (esHostSinMunicipio) return SLUG_POR_DEFECTO;
-  return hostname.split('.')[0] || SLUG_POR_DEFECTO;
+  return partes[0] || SLUG_POR_DEFECTO;
 }
 
 interface EstadoMunicipio {
