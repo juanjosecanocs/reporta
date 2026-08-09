@@ -103,11 +103,21 @@ El sitio de Netlify (`app-reporta`) está conectado directamente al repo de GitH
 cada push a `main` dispara un build (`npm run build`) y deploy automático en la
 infraestructura de Netlify, sin pasos manuales ni GitHub Actions de por medio.
 
-Dominio propio: `app-reporta.es` (Hostinger), con `www` redirigiendo al apex y
-subdominios por municipio (ej. `almeria.app-reporta.es`, `garrucha.app-reporta.es`)
-dados de alta uno a uno como domain alias en Netlify + CNAME en Hostinger. El
-DNS se gestiona en Hostinger (no en Netlify DNS) para no afectar al correo del
-dominio.
+Dominio propio: `app-reporta.es` (Hostinger), con subdominios por municipio
+(ej. `almeria.app-reporta.es`, `garrucha.app-reporta.es`) dados de alta uno a
+uno como domain alias en Netlify + CNAME en Hostinger. El DNS se gestiona en
+Hostinger (no en Netlify DNS) para no afectar al correo del dominio.
+
+**`www.app-reporta.es` está reservado para una landing page de presentación**
+(qué aporta la app, cómo funciona), pensada como **proyecto de Netlify
+totalmente independiente de este repo** — build, deploy y dominio propios, sin
+relación con el código ni el `netlify.toml` de este sitio. Mientras ese
+proyecto no exista, `www` sigue siendo alias de este sitio con redirect al
+apex; al lanzar la landing, ese alias se retira de aquí y pasa al sitio nuevo.
+El borrador de esa landing (componente React + guía de despliegue, aún sin
+convertir en proyecto desplegable) vive de momento en `landingclaude/` en este
+mismo repo, solo como referencia temporal hasta que se extraiga a su propio
+repo/proyecto.
 
 - **Build command**: `npm run build`
 - **Publish directory**: `dist`
