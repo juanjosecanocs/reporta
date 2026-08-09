@@ -3,8 +3,9 @@
 -- Introduce el concepto de "host de municipio" que hasta ahora no existía:
 -- cada municipio es una fila con su propio centro/zoom de mapa y el slug que
 -- debe coincidir con el subdominio (almeria.midominio.es -> slug 'almeria').
--- Mientras no exista dominio propio (Fase 0/5 pendientes), el frontend usa
--- 'almeria' como slug por defecto en reporta-almeria.netlify.app y localhost.
+-- Con dominio propio ya conectado (Fase 0/5), el frontend resuelve el slug
+-- real desde el subdominio (ej. almeria.app-reporta.es); en localhost y
+-- *.netlify.app sigue cayendo al slug por defecto.
 
 create table if not exists municipios (
   id uuid primary key default gen_random_uuid(),

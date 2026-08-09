@@ -19,8 +19,9 @@
 -- Nota operativa: para que "email verificado" signifique algo hay que
 -- comprobar en el Dashboard de Supabase (Authentication > Providers > Email)
 -- que "Confirm email" esté activado, y que la Site URL / Redirect URLs
--- incluyan el dominio de la app (reporta-almeria.netlify.app y localhost).
--- Eso no se puede hacer por SQL, es configuración de proyecto.
+-- incluyan el dominio de la app (app-reporta.es, sus subdominios de
+-- municipio y localhost). Eso no se puede hacer por SQL, es configuración
+-- de proyecto.
 
 alter table incidencias_anonimas
   add column if not exists usuario_id uuid references auth.users(id);

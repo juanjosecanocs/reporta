@@ -99,9 +99,15 @@ src/
 
 ## Despliegue
 
-El sitio de Netlify (`reporta-almeria`) está conectado directamente al repo de GitHub:
+El sitio de Netlify (`app-reporta`) está conectado directamente al repo de GitHub:
 cada push a `main` dispara un build (`npm run build`) y deploy automático en la
 infraestructura de Netlify, sin pasos manuales ni GitHub Actions de por medio.
+
+Dominio propio: `app-reporta.es` (Hostinger), con `www` redirigiendo al apex y
+subdominios por municipio (ej. `almeria.app-reporta.es`, `garrucha.app-reporta.es`)
+dados de alta uno a uno como domain alias en Netlify + CNAME en Hostinger. El
+DNS se gestiona en Hostinger (no en Netlify DNS) para no afectar al correo del
+dominio.
 
 - **Build command**: `npm run build`
 - **Publish directory**: `dist`

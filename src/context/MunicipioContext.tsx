@@ -22,6 +22,10 @@ function resolverSlugDesdeHostname(hostname: string): string {
   return partes[0] || SLUG_POR_DEFECTO;
 }
 
+function dominioRaiz(hostname: string): string {
+  return hostname.split('.').slice(-2).join('.');
+}
+
 interface EstadoMunicipio {
   municipio: Municipio | null;
   cargando: boolean;
@@ -43,12 +47,22 @@ export function MunicipioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelado = false;
-    const slug = resolverSlugDesdeHostname(window.location.hostname);
+    const hostname = window.location.hostname;
+    const slug = resolverSlugDesdeHostname(hostname);
 
     obtenerMunicipioPorSlug(slug)
       .then((municipio) => {
         if (cancelado) return;
         if (!municipio) {
+          // Subdominio de municipio sin fila activa (ej. dado de baja o con
+          // el slug mal escrito): en vez de un error técnico, se manda al
+          // dominio raíz para que caiga al municipio por defecto. Si el que
+          // falla es el propio slug por defecto, no hay a dónde redirigir
+          // sin bucle, así que ahí sí se muestra el error.
+          if (slug !== SLUG_POR_DEFECTO) {
+            window.location.href = `${window.location.protocol}//${dominioRaiz(hostname)}${window.location.pathname}`;
+            return;
+          }
           setEstado({ municipio: null, cargando: false, error: `No existe un municipio activo con slug "${slug}"` });
           return;
         }
