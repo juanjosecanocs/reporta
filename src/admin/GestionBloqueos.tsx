@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { listarBloqueos, desbloquear, type BloqueoConDetalle } from '../services/bloqueosService';
 import { useAdminAuth } from '../hooks/useAdminAuth';
+import { mensajeDeError } from '../utils/errores';
 
 export function GestionBloqueos() {
   const { esSuperAdmin } = useAdminAuth();
@@ -14,7 +15,7 @@ export function GestionBloqueos() {
     try {
       setBloqueos(await listarBloqueos());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error cargando los bloqueos');
+      setError(mensajeDeError(err, 'Error cargando los bloqueos'));
     } finally {
       setCargando(false);
     }
@@ -30,7 +31,7 @@ export function GestionBloqueos() {
       await desbloquear(id);
       cargar();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desbloqueando');
+      setError(mensajeDeError(err, 'Error desbloqueando'));
     }
   }
 

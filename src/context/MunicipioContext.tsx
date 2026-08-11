@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { obtenerMunicipioPorSlug } from '../services/municipioService';
+import { mensajeDeError } from '../utils/errores';
 import type { Municipio } from '../types';
 
 const SLUG_POR_DEFECTO = import.meta.env.VITE_DEFAULT_MUNICIPIO_SLUG || 'almeria';
@@ -73,7 +74,7 @@ export function MunicipioProvider({ children }: { children: ReactNode }) {
         setEstado({
           municipio: null,
           cargando: false,
-          error: error instanceof Error ? error.message : 'Error cargando el municipio',
+          error: mensajeDeError(error, 'Error cargando el municipio'),
         });
       });
 

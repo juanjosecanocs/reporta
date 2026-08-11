@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { mensajeDeError } from '../utils/errores';
 
 interface Props {
   onIniciarSesion: (email: string, password: string) => Promise<void>;
@@ -20,7 +21,7 @@ export function AdminLogin({ onIniciarSesion, onSolicitarRecuperacion }: Props) 
     try {
       await onIniciarSesion(email, password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+      setError(mensajeDeError(err, 'Error al iniciar sesión'));
     } finally {
       setEnviando(false);
     }
@@ -46,7 +47,7 @@ export function AdminLogin({ onIniciarSesion, onSolicitarRecuperacion }: Props) 
                 await onSolicitarRecuperacion(email);
                 setRecuperacionEnviada(true);
               } catch (err) {
-                setError(err instanceof Error ? err.message : 'Error enviando el correo');
+                setError(mensajeDeError(err, 'Error enviando el correo'));
               } finally {
                 setEnviando(false);
               }

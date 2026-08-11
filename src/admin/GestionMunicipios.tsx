@@ -5,6 +5,7 @@ import {
   cambiarActivoMunicipio,
   type DatosMunicipio,
 } from '../services/municipioAdminService';
+import { mensajeDeError } from '../utils/errores';
 import type { Municipio } from '../types';
 
 const MUNICIPIO_VACIO: DatosMunicipio = { slug: '', nombre: '', centro_lat: 0, centro_lng: 0, zoom_inicial: 13 };
@@ -37,7 +38,7 @@ function FormularioMunicipio({
     try {
       await onGuardar(datos);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error guardando');
+      setError(mensajeDeError(err, 'Error guardando'));
     } finally {
       setGuardando(false);
     }
@@ -120,7 +121,7 @@ export function GestionMunicipios() {
     try {
       setMunicipios(await listarMunicipiosAdmin());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error cargando municipios');
+      setError(mensajeDeError(err, 'Error cargando municipios'));
     } finally {
       setCargando(false);
     }
@@ -136,7 +137,7 @@ export function GestionMunicipios() {
       await cambiarActivoMunicipio(m.id, !m.activo);
       cargar();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error actualizando el municipio');
+      setError(mensajeDeError(err, 'Error actualizando el municipio'));
     }
   }
 

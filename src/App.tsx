@@ -18,6 +18,7 @@ import { useHistorialIncidencias } from './hooks/useLocalStorage';
 import { useCiudadanoAuth } from './hooks/useCiudadanoAuth';
 import { crearIncidencia, adjuntarImagen } from './services/storageService';
 import { useMunicipioActual } from './context/MunicipioContext';
+import { mensajeDeError } from './utils/errores';
 import type { Tipo, Subtipo } from './types';
 
 type Paso = 'mapa' | 'tipo' | 'subtipo' | 'cuenta' | 'mi-cuenta' | 'foto' | 'revision' | 'enviado' | 'historial';
@@ -119,7 +120,7 @@ function App() {
       setCodigoSeguimiento(incidencia.codigo_seguimiento);
       setPaso('enviado');
     } catch (err) {
-      setErrorEnvio(err instanceof Error ? err.message : 'Error enviando la incidencia');
+      setErrorEnvio(mensajeDeError(err, 'Error enviando la incidencia'));
     } finally {
       setEnviando(false);
     }

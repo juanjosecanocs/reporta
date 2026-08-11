@@ -13,6 +13,7 @@ import {
 import { listarMunicipiosActivos } from '../services/municipioService';
 import { crearBloqueo } from '../services/bloqueosService';
 import { SUBTIPO_ICONOS, TIPO_ICONOS, ICONO_POR_DEFECTO } from '../data/iconos';
+import { mensajeDeError } from '../utils/errores';
 import { FichaIncidencia } from '../components/Incidencia/FichaIncidencia';
 import type { Incidencia, Municipio } from '../types';
 
@@ -67,7 +68,7 @@ export function AdminDashboard() {
       };
       setIncidencias(await listarIncidenciasAdmin(filtros));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error cargando incidencias');
+      setError(mensajeDeError(err, 'Error cargando incidencias'));
     } finally {
       setCargando(false);
     }
@@ -128,7 +129,7 @@ export function AdminDashboard() {
       setBloqueando(false);
       setBloqueoHecho(true);
     } catch (err) {
-      setErrorBloqueo(err instanceof Error ? err.message : 'Error bloqueando al usuario');
+      setErrorBloqueo(mensajeDeError(err, 'Error bloqueando al usuario'));
     }
   }
 
@@ -138,7 +139,7 @@ export function AdminDashboard() {
     try {
       await actualizarEstado(id, estado);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error actualizando estado');
+      setError(mensajeDeError(err, 'Error actualizando estado'));
       cargar();
     }
   }
@@ -151,7 +152,7 @@ export function AdminDashboard() {
       setFichaAbierta(null);
       cargar();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error eliminando la incidencia');
+      setError(mensajeDeError(err, 'Error eliminando la incidencia'));
     }
   }
 
@@ -161,7 +162,7 @@ export function AdminDashboard() {
       setFichaAbierta(null);
       cargar();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error restaurando la incidencia');
+      setError(mensajeDeError(err, 'Error restaurando la incidencia'));
     }
   }
 

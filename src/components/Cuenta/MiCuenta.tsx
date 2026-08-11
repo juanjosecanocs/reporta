@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { FormularioNuevaPassword } from './FormularioNuevaPassword';
+import { mensajeDeError } from '../../utils/errores';
 
 interface Props {
   session: Session;
@@ -32,7 +33,7 @@ export function MiCuenta({
       await onCambiarNombre(nombre);
       setNombreGuardado(true);
     } catch (err) {
-      setErrorNombre(err instanceof Error ? err.message : 'Error guardando el nombre');
+      setErrorNombre(mensajeDeError(err, 'Error guardando el nombre'));
     } finally {
       setGuardandoNombre(false);
     }

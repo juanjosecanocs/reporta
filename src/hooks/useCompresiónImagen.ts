@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { mensajeDeError } from '../utils/errores';
 
 const OBJETIVO_MIN_BYTES = 120 * 1024;
 const OBJETIVO_MAX_BYTES = 200 * 1024;
@@ -68,7 +69,7 @@ export function useCompresionImagen() {
       setEstado({ comprimiendo: false, error: null });
       return { blob, originalSizeBytes: archivo.size, dentroDeObjetivo: blob.size <= OBJETIVO_MAX_BYTES };
     } catch (err) {
-      const mensaje = err instanceof Error ? err.message : 'Error comprimiendo imagen';
+      const mensaje = mensajeDeError(err, 'Error comprimiendo imagen');
       setEstado({ comprimiendo: false, error: mensaje });
       throw err;
     }

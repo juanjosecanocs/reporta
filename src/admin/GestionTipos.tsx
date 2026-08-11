@@ -21,6 +21,7 @@ import {
   type DatosSubtipo,
 } from '../services/tiposAdminService';
 import { listarMunicipiosAdmin } from '../services/municipioAdminService';
+import { mensajeDeError } from '../utils/errores';
 import { ICONO_POR_DEFECTO } from '../data/iconos';
 import type { Tipo, Subtipo, Municipio } from '../types';
 
@@ -50,7 +51,7 @@ function FormularioTipo({
     try {
       await onGuardar(datos);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error guardando');
+      setError(mensajeDeError(err, 'Error guardando'));
     } finally {
       setGuardando(false);
     }
@@ -130,7 +131,7 @@ function FormularioSubtipo({
     try {
       await onGuardar(datos);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error guardando');
+      setError(mensajeDeError(err, 'Error guardando'));
     } finally {
       setGuardando(false);
     }
@@ -207,7 +208,7 @@ function FilaSubtipo({
       await fn();
       onCambio();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(mensajeDeError(err, 'Error'));
     }
   }
 
@@ -331,7 +332,7 @@ function FilaTipo({
       await fn();
       onCambio();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(mensajeDeError(err, 'Error'));
     }
   }
 
@@ -496,7 +497,7 @@ export function GestionTipos() {
     if (!esSuperAdmin) return;
     listarMunicipiosAdmin()
       .then((lista) => setMunicipios(lista))
-      .catch((err) => setError(err instanceof Error ? err.message : 'Error cargando municipios'));
+      .catch((err) => setError(mensajeDeError(err, 'Error cargando municipios')));
   }, [esSuperAdmin]);
 
   async function cargar(municipio: string) {
@@ -505,7 +506,7 @@ export function GestionTipos() {
     try {
       setTipos(municipio === GENERAL ? await listarTiposBase() : await listarTiposPorMunicipio(municipio));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error cargando tipos');
+      setError(mensajeDeError(err, 'Error cargando tipos'));
     } finally {
       setCargando(false);
     }

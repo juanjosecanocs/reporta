@@ -9,20 +9,10 @@ import {
   type CandidatoAdmin,
 } from '../services/adminUsersService';
 import { listarMunicipiosAdmin } from '../services/municipioAdminService';
+import { mensajeDeError } from '../utils/errores';
 import type { Municipio } from '../types';
 
 const OPCION_GENERAL = '';
-
-// Los errores de Supabase (p.ej. una excepción de un trigger) llegan como
-// objeto plano {message, code, ...}, no como instancia de Error -- por eso
-// no basta con `err instanceof Error` para recuperar el mensaje real.
-function mensajeDeError(err: unknown, fallback: string): string {
-  if (err instanceof Error) return err.message;
-  if (err && typeof err === 'object' && typeof (err as { message?: unknown }).message === 'string') {
-    return (err as { message: string }).message;
-  }
-  return fallback;
-}
 
 function SelectorMunicipio({
   municipios,
@@ -247,7 +237,7 @@ export function GestionAdministradores() {
       setAdministradores(admins);
       setMunicipios(munis);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error cargando administradores');
+      setError(mensajeDeError(err, 'Error cargando administradores'));
     } finally {
       setCargando(false);
     }

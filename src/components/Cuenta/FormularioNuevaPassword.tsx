@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { mensajeDeError } from '../../utils/errores';
 
 interface Props {
   onGuardar: (password: string) => Promise<void>;
@@ -26,7 +27,7 @@ export function FormularioNuevaPassword({ onGuardar, titulo = 'Elige una nueva c
       setPassword('');
       setConfirmacion('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error guardando la contraseña');
+      setError(mensajeDeError(err, 'Error guardando la contraseña'));
     } finally {
       setEnviando(false);
     }

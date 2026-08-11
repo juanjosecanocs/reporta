@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { mensajeDeError } from '../../utils/errores';
 
 interface Props {
   contexto?: 'reporte' | 'perfil';
@@ -84,7 +85,7 @@ export function AccesoCiudadano({
               await onReenviarVerificacion();
               setReenviado(true);
             } catch (err) {
-              setError(err instanceof Error ? err.message : 'Error reenviando el correo');
+              setError(mensajeDeError(err, 'Error reenviando el correo'));
             }
           }}
           className="rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary"
@@ -172,7 +173,7 @@ export function AccesoCiudadano({
                 await onSolicitarRecuperacion(email);
                 setRecuperacionEnviada(true);
               } catch (err) {
-                setError(err instanceof Error ? err.message : 'Error enviando el correo');
+                setError(mensajeDeError(err, 'Error enviando el correo'));
               } finally {
                 setEnviando(false);
               }
@@ -217,7 +218,7 @@ export function AccesoCiudadano({
         await onIniciarSesion(email, password);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(mensajeDeError(err, 'Error'));
     } finally {
       setEnviando(false);
     }
