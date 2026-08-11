@@ -6,9 +6,10 @@ import { AdminDashboard } from './AdminDashboard';
 import { GestionTipos } from './GestionTipos';
 import { GestionMunicipios } from './GestionMunicipios';
 import { GestionBloqueos } from './GestionBloqueos';
+import { GestionAdministradores } from './GestionAdministradores';
 import { FormularioNuevaPassword } from '../components/Cuenta/FormularioNuevaPassword';
 
-type Vista = 'incidencias' | 'tipos' | 'municipios' | 'bloqueados';
+type Vista = 'incidencias' | 'tipos' | 'municipios' | 'bloqueados' | 'administradores';
 
 export function AdminApp() {
   const {
@@ -106,6 +107,17 @@ export function AdminApp() {
               Municipios
             </button>
           )}
+          {esSuperAdmin && (
+            <button
+              type="button"
+              onClick={() => setVista('administradores')}
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                vista === 'administradores' ? 'bg-primary text-white' : 'text-gray-500'
+              }`}
+            >
+              Administradores
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -131,6 +143,7 @@ export function AdminApp() {
       {vista === 'tipos' && <GestionTipos />}
       {vista === 'bloqueados' && <GestionBloqueos />}
       {vista === 'municipios' && esSuperAdmin && <GestionMunicipios />}
+      {vista === 'administradores' && esSuperAdmin && <GestionAdministradores />}
     </>
   );
 }

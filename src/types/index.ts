@@ -41,6 +41,13 @@ export interface Municipio {
   activo: boolean;
 }
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  municipio_id: string | null;
+  created_at: string;
+}
+
 export interface Tipo {
   id: string;
   nombre: string;
