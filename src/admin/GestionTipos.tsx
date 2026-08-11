@@ -1,22 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import {
-  listarTiposAdmin,
+  listarTiposBase,
+  listarTiposPorMunicipio,
   crearTipo,
   actualizarTipo,
-  cambiarActivoTipo,
+  cambiarActivoTipoGeneral,
+  cambiarActivoTipoMunicipio,
   eliminarTipoDefinitivo,
-  reordenarTipo,
+  reordenarTipoGeneral,
+  reordenarTipoMunicipio,
   crearSubtipo,
   actualizarSubtipo,
-  cambiarActivoSubtipo,
+  cambiarActivoSubtipoGeneral,
+  cambiarActivoSubtipoMunicipio,
   eliminarSubtipoDefinitivo,
-  reordenarSubtipo,
+  reordenarSubtipoGeneral,
+  reordenarSubtipoMunicipio,
   type DatosTipo,
   type DatosSubtipo,
 } from '../services/tiposAdminService';
+import { listarMunicipiosAdmin } from '../services/municipioAdminService';
 import { ICONO_POR_DEFECTO } from '../data/iconos';
-import type { Tipo, Subtipo } from '../types';
+import type { Tipo, Subtipo, Municipio } from '../types';
+
+/** No es un municipio real (no toca la tabla municipios): es la plantilla maestra, solo para super-admin. */
+const GENERAL = '__general__';
 
 const TIPO_VACIO: DatosTipo = { nombre: '', descripcion: '', icono_name: '', color_primario: '#043F63', color_secundario: '#0A5A8A' };
 const SUBTIPO_VACIO: DatosSubtipo = { nombre: '', descripcion: '', icono_name: '', urgencia: 3 };
@@ -177,14 +186,16 @@ function FilaSubtipo({
   hermanos,
   esPrimero,
   esUltimo,
-  esSuperAdmin,
+  esGeneral,
+  municipioId,
   onCambio,
 }: {
   subtipo: Subtipo;
   hermanos: Subtipo[];
   esPrimero: boolean;
   esUltimo: boolean;
-  esSuperAdmin: boolean;
+  esGeneral: boolean;
+  municipioId: string;
   onCambio: () => void;
 }) {
   const [editando, setEditando] = useState(false);
@@ -231,7 +242,13 @@ function FilaSubtipo({
         <button
           type="button"
           disabled={esPrimero}
-          onClick={() => accion(async () => reordenarSubtipo(hermanos, subtipo.id, 'subir'))}
+          onClick={() =>
+            accion(async () =>
+              esGeneral
+                ? reordenarSubtipoGeneral(hermanos, subtipo.id, 'subir')
+                : reordenarSubtipoMunicipio(municipioId, hermanos, subtipo.id, 'subir')
+            )
+          }
           className="rounded border border-gray-300 px-1.5 py-0.5 text-xs disabled:opacity-30"
         >
           ↑
@@ -239,26 +256,38 @@ function FilaSubtipo({
         <button
           type="button"
           disabled={esUltimo}
-          onClick={() => accion(async () => reordenarSubtipo(hermanos, subtipo.id, 'bajar'))}
+          onClick={() =>
+            accion(async () =>
+              esGeneral
+                ? reordenarSubtipoGeneral(hermanos, subtipo.id, 'bajar')
+                : reordenarSubtipoMunicipio(municipioId, hermanos, subtipo.id, 'bajar')
+            )
+          }
           className="rounded border border-gray-300 px-1.5 py-0.5 text-xs disabled:opacity-30"
         >
           ↓
         </button>
       </div>
 
-      {esSuperAdmin && (
+      {esGeneral && (
         <button type="button" onClick={() => setEditando(true)} className="rounded border border-primary px-2 py-0.5 text-xs font-semibold text-primary">
           Editar
         </button>
       )}
       <button
         type="button"
-        onClick={() => accion(async () => cambiarActivoSubtipo(subtipo.id, !subtipo.activo))}
+        onClick={() =>
+          accion(async () =>
+            esGeneral
+              ? cambiarActivoSubtipoGeneral(subtipo.id, !subtipo.activo)
+              : cambiarActivoSubtipoMunicipio(municipioId, subtipo.id, !subtipo.activo)
+          )
+        }
         className="rounded border border-gray-300 px-2 py-0.5 text-xs font-semibold text-gray-600"
       >
         {subtipo.activo ? 'Desactivar' : 'Activar'}
       </button>
-      {esSuperAdmin && (
+      {esGeneral && (
         <button
           type="button"
           onClick={() => accion(async () => eliminarSubtipoDefinitivo(subtipo.id))}
@@ -277,14 +306,16 @@ function FilaTipo({
   esPrimero,
   esUltimo,
   todosTipos,
-  esSuperAdmin,
+  esGeneral,
+  municipioId,
   onCambio,
 }: {
   tipo: Tipo;
   esPrimero: boolean;
   esUltimo: boolean;
   todosTipos: Tipo[];
-  esSuperAdmin: boolean;
+  esGeneral: boolean;
+  municipioId: string;
   onCambio: () => void;
 }) {
   const [expandido, setExpandido] = useState(false);
@@ -325,7 +356,13 @@ function FilaTipo({
           <button
             type="button"
             disabled={esPrimero}
-            onClick={() => accion(async () => reordenarTipo(todosTipos, tipo.id, 'subir'))}
+            onClick={() =>
+              accion(async () =>
+                esGeneral
+                  ? reordenarTipoGeneral(todosTipos, tipo.id, 'subir')
+                  : reordenarTipoMunicipio(municipioId, todosTipos, tipo.id, 'subir')
+              )
+            }
             className="rounded border border-gray-300 px-1.5 py-0.5 text-xs disabled:opacity-30"
           >
             ↑
@@ -333,26 +370,38 @@ function FilaTipo({
           <button
             type="button"
             disabled={esUltimo}
-            onClick={() => accion(async () => reordenarTipo(todosTipos, tipo.id, 'bajar'))}
+            onClick={() =>
+              accion(async () =>
+                esGeneral
+                  ? reordenarTipoGeneral(todosTipos, tipo.id, 'bajar')
+                  : reordenarTipoMunicipio(municipioId, todosTipos, tipo.id, 'bajar')
+              )
+            }
             className="rounded border border-gray-300 px-1.5 py-0.5 text-xs disabled:opacity-30"
           >
             ↓
           </button>
         </div>
 
-        {esSuperAdmin && (
+        {esGeneral && (
           <button type="button" onClick={() => setEditando((v) => !v)} className="rounded border border-primary px-2 py-1 text-xs font-semibold text-primary">
             Editar
           </button>
         )}
         <button
           type="button"
-          onClick={() => accion(async () => cambiarActivoTipo(tipo.id, !tipo.activo))}
+          onClick={() =>
+            accion(async () =>
+              esGeneral
+                ? cambiarActivoTipoGeneral(tipo.id, !tipo.activo)
+                : cambiarActivoTipoMunicipio(municipioId, tipo.id, !tipo.activo)
+            )
+          }
           className="rounded border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-600"
         >
           {tipo.activo ? 'Desactivar' : 'Activar'}
         </button>
-        {esSuperAdmin && (
+        {esGeneral && (
           <button
             type="button"
             onClick={() => accion(async () => eliminarTipoDefinitivo(tipo.id))}
@@ -365,7 +414,7 @@ function FilaTipo({
 
       {error && <p className="px-3 pb-2 text-xs text-red-500">{error}</p>}
 
-      {editando && esSuperAdmin && (
+      {editando && esGeneral && (
         <div className="px-3 pb-3">
           <FormularioTipo
             inicial={{
@@ -397,12 +446,13 @@ function FilaTipo({
               hermanos={subtipos}
               esPrimero={i === 0}
               esUltimo={i === subtipos.length - 1}
-              esSuperAdmin={esSuperAdmin}
+              esGeneral={esGeneral}
+              municipioId={municipioId}
               onCambio={onCambio}
             />
           ))}
 
-          {esSuperAdmin &&
+          {esGeneral &&
             (creandoSubtipo ? (
               <FormularioSubtipo
                 inicial={SUBTIPO_VACIO}
@@ -429,17 +479,31 @@ function FilaTipo({
 }
 
 export function GestionTipos() {
-  const { esSuperAdmin } = useAdminAuth();
+  const { esSuperAdmin, municipioId: municipioPropio } = useAdminAuth();
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [municipioSeleccionado, setMunicipioSeleccionado] = useState<string | null>(GENERAL);
   const [tipos, setTipos] = useState<Tipo[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creandoTipo, setCreandoTipo] = useState(false);
 
-  async function cargar() {
+  const municipioActivo = esSuperAdmin ? municipioSeleccionado : municipioPropio;
+  const esGeneral = municipioActivo === GENERAL;
+
+  // Solo el super-admin ve municipios reales en el selector (además de
+  // General): un admin municipal ya tiene el suyo fijo, sin selector.
+  useEffect(() => {
+    if (!esSuperAdmin) return;
+    listarMunicipiosAdmin()
+      .then((lista) => setMunicipios(lista))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Error cargando municipios'));
+  }, [esSuperAdmin]);
+
+  async function cargar(municipio: string) {
     setCargando(true);
     setError(null);
     try {
-      setTipos(await listarTiposAdmin());
+      setTipos(municipio === GENERAL ? await listarTiposBase() : await listarTiposPorMunicipio(municipio));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error cargando tipos');
     } finally {
@@ -448,8 +512,8 @@ export function GestionTipos() {
   }
 
   useEffect(() => {
-    cargar();
-  }, []);
+    if (municipioActivo) cargar(municipioActivo);
+  }, [municipioActivo]);
 
   const tiposOrdenados = [...tipos].sort((a, b) => a.orden - b.orden);
 
@@ -458,13 +522,31 @@ export function GestionTipos() {
       <h2 className="mb-1 text-lg font-semibold text-gray-800">Tipos y subtipos</h2>
       <p className="mb-4 text-sm text-gray-500">
         {esSuperAdmin
-          ? 'Crea, edita, reordena o desactiva las categorías de incidencias. Los cambios se reflejan al momento en la app.'
-          : 'Puedes activar, desactivar y reordenar tipos y subtipos. Crear, editar o eliminar categorías está reservado a un super-administrador, porque son compartidas por todos los municipios.'}
+          ? 'En "General" creas, editas o eliminas categorías, y lo que actives/reordenes ahí se replica en todos los municipios. Elige un municipio concreto para ver o ajustar solo su activo/orden.'
+          : 'Puedes activar, desactivar y reordenar tipos y subtipos para tu municipio. Crear, editar o eliminar categorías está reservado a un administrador general, porque son compartidas por todos los municipios.'}
       </p>
+
+      {esSuperAdmin && (
+        <div className="mb-4 flex items-center gap-2">
+          <label className="text-sm text-gray-600">Municipio:</label>
+          <select
+            value={municipioSeleccionado ?? GENERAL}
+            onChange={(e) => setMunicipioSeleccionado(e.target.value)}
+            className="rounded-lg border border-gray-300 px-2 py-1 text-sm"
+          >
+            <option value={GENERAL}>General (plantilla maestra)</option>
+            {municipios.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
 
-      {cargando ? (
+      {!municipioActivo || cargando ? (
         <p className="text-sm text-gray-500">Cargando…</p>
       ) : (
         <div className="flex flex-col gap-2">
@@ -475,14 +557,15 @@ export function GestionTipos() {
               esPrimero={i === 0}
               esUltimo={i === tiposOrdenados.length - 1}
               todosTipos={tiposOrdenados}
-              esSuperAdmin={esSuperAdmin}
-              onCambio={cargar}
+              esGeneral={esGeneral}
+              municipioId={esGeneral ? '' : municipioActivo}
+              onCambio={() => cargar(municipioActivo)}
             />
           ))}
         </div>
       )}
 
-      {esSuperAdmin && (
+      {esGeneral && (
         <div className="mt-4">
           {creandoTipo ? (
             <FormularioTipo
@@ -490,7 +573,7 @@ export function GestionTipos() {
               onGuardar={async (datos) => {
                 await crearTipo(datos);
                 setCreandoTipo(false);
-                cargar();
+                cargar(GENERAL);
               }}
               onCancelar={() => setCreandoTipo(false)}
             />

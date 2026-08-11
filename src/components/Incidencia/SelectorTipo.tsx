@@ -1,4 +1,5 @@
 import { useTipos } from '../../hooks/useTipos';
+import { useMunicipioActual } from '../../context/MunicipioContext';
 import { TIPO_ICONOS, ICONO_POR_DEFECTO } from '../../data/iconos';
 import type { Tipo } from '../../types';
 
@@ -8,7 +9,8 @@ interface Props {
 }
 
 export function SelectorTipo({ onSeleccionar, onVolver }: Props) {
-  const { tipos, cargando, error } = useTipos();
+  const { municipio } = useMunicipioActual();
+  const { tipos, cargando, error } = useTipos(municipio?.id);
 
   return (
     <div className="p-4">

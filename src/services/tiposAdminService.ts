@@ -1,8 +1,24 @@
 import { supabase } from './supabaseClient';
 import type { Tipo, Subtipo } from '../types';
 
-/** Trae tipos y subtipos completos (incluidos inactivos) para la pantalla de gestión. */
-export async function listarTiposAdmin(): Promise<Tipo[]> {
+interface FilaMunicipioTipo {
+  activo: boolean;
+  orden: number;
+  tipo: Tipo;
+}
+
+interface FilaMunicipioSubtipo {
+  activo: boolean;
+  orden: number;
+  subtipo: Subtipo;
+}
+
+/**
+ * Catálogo completo con el activo/orden de la "plantilla maestra"
+ * (tipos_incidencias/subtipos_incidencias directamente, sin pasar por
+ * ningún municipio) -- solo para la vista "General" de un super-admin.
+ */
+export async function listarTiposBase(): Promise<Tipo[]> {
   const { data: tipos, error: errorTipos } = await supabase
     .from('tipos_incidencias')
     .select('*')
@@ -19,6 +35,205 @@ export async function listarTiposAdmin(): Promise<Tipo[]> {
     ...tipo,
     subtipos: (subtipos ?? []).filter((s: Subtipo) => s.tipo_id === tipo.id),
   }));
+}
+
+/** Activa/desactiva en la plantilla maestra y lo replica en todos los municipios. */
+export async function cambiarActivoTipoGeneral(tipoId: string, activo: boolean): Promise<void> {
+  const { error: errorBase } = await supabase
+    .from('tipos_incidencias')
+    .update({ activo, updated_at: new Date().toISOString() })
+    .eq('id', tipoId);
+  if (errorBase) throw errorBase;
+
+  const { error: errorMunicipios } = await supabase.from('municipio_tipos').update({ activo }).eq('tipo_id', tipoId);
+  if (errorMunicipios) throw errorMunicipios;
+}
+
+/**
+ * Reordena en la plantilla maestra y resetea el orden de TODOS los
+ * municipios para que vuelva a coincidir con ella -- si algún municipio
+ * había reordenado este tipo a su manera, ese ajuste se pierde.
+ */
+export async function reordenarTipoGeneral(tipos: Tipo[], id: string, direccion: 'subir' | 'bajar'): Promise<void> {
+  const ordenados = [...tipos].sort((a, b) => a.orden - b.orden);
+  const idx = ordenados.findIndex((t) => t.id === id);
+  const idxVecino = direccion === 'subir' ? idx - 1 : idx + 1;
+  if (idx === -1 || idxVecino < 0 || idxVecino >= ordenados.length) return;
+
+  const actual = ordenados[idx];
+  const vecino = ordenados[idxVecino];
+
+  const { error: error1 } = await supabase
+    .from('tipos_incidencias')
+    .update({ orden: vecino.orden })
+    .eq('id', actual.id);
+  if (error1) throw error1;
+
+  const { error: error2 } = await supabase
+    .from('tipos_incidencias')
+    .update({ orden: actual.orden })
+    .eq('id', vecino.id);
+  if (error2) throw error2;
+
+  const { error: error3 } = await supabase.from('municipio_tipos').update({ orden: vecino.orden }).eq('tipo_id', actual.id);
+  if (error3) throw error3;
+
+  const { error: error4 } = await supabase.from('municipio_tipos').update({ orden: actual.orden }).eq('tipo_id', vecino.id);
+  if (error4) throw error4;
+}
+
+/** Activa/desactiva en la plantilla maestra y lo replica en todos los municipios. */
+export async function cambiarActivoSubtipoGeneral(subtipoId: string, activo: boolean): Promise<void> {
+  const { error: errorBase } = await supabase
+    .from('subtipos_incidencias')
+    .update({ activo, updated_at: new Date().toISOString() })
+    .eq('id', subtipoId);
+  if (errorBase) throw errorBase;
+
+  const { error: errorMunicipios } = await supabase
+    .from('municipio_subtipos')
+    .update({ activo })
+    .eq('subtipo_id', subtipoId);
+  if (errorMunicipios) throw errorMunicipios;
+}
+
+/** Igual que reordenarTipoGeneral pero para subtipos (dentro de su mismo tipo). */
+export async function reordenarSubtipoGeneral(subtipos: Subtipo[], id: string, direccion: 'subir' | 'bajar'): Promise<void> {
+  const ordenados = [...subtipos].sort((a, b) => a.orden - b.orden);
+  const idx = ordenados.findIndex((s) => s.id === id);
+  const idxVecino = direccion === 'subir' ? idx - 1 : idx + 1;
+  if (idx === -1 || idxVecino < 0 || idxVecino >= ordenados.length) return;
+
+  const actual = ordenados[idx];
+  const vecino = ordenados[idxVecino];
+
+  const { error: error1 } = await supabase
+    .from('subtipos_incidencias')
+    .update({ orden: vecino.orden })
+    .eq('id', actual.id);
+  if (error1) throw error1;
+
+  const { error: error2 } = await supabase
+    .from('subtipos_incidencias')
+    .update({ orden: actual.orden })
+    .eq('id', vecino.id);
+  if (error2) throw error2;
+
+  const { error: error3 } = await supabase
+    .from('municipio_subtipos')
+    .update({ orden: vecino.orden })
+    .eq('subtipo_id', actual.id);
+  if (error3) throw error3;
+
+  const { error: error4 } = await supabase
+    .from('municipio_subtipos')
+    .update({ orden: actual.orden })
+    .eq('subtipo_id', vecino.id);
+  if (error4) throw error4;
+}
+
+/** Catálogo completo con el activo/orden propios de ese municipio, para la pantalla de gestión. */
+export async function listarTiposPorMunicipio(municipioId: string): Promise<Tipo[]> {
+  const { data: filasTipos, error: errorTipos } = await supabase
+    .from('municipio_tipos')
+    .select('activo, orden, tipo:tipo_id (*)')
+    .eq('municipio_id', municipioId)
+    .order('orden');
+  if (errorTipos) throw errorTipos;
+
+  const { data: filasSubtipos, error: errorSubtipos } = await supabase
+    .from('municipio_subtipos')
+    .select('activo, orden, subtipo:subtipo_id (*)')
+    .eq('municipio_id', municipioId)
+    .order('orden');
+  if (errorSubtipos) throw errorSubtipos;
+
+  const subtipos: Subtipo[] = ((filasSubtipos ?? []) as unknown as FilaMunicipioSubtipo[]).map((fila) => ({
+    ...fila.subtipo,
+    activo: fila.activo,
+    orden: fila.orden,
+  }));
+
+  return ((filasTipos ?? []) as unknown as FilaMunicipioTipo[]).map((fila) => {
+    const tipo: Tipo = { ...fila.tipo, activo: fila.activo, orden: fila.orden };
+    return { ...tipo, subtipos: subtipos.filter((s) => s.tipo_id === tipo.id) };
+  });
+}
+
+export async function cambiarActivoTipoMunicipio(municipioId: string, tipoId: string, activo: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('municipio_tipos')
+    .update({ activo })
+    .eq('municipio_id', municipioId)
+    .eq('tipo_id', tipoId);
+  if (error) throw error;
+}
+
+export async function reordenarTipoMunicipio(
+  municipioId: string,
+  tipos: Tipo[],
+  id: string,
+  direccion: 'subir' | 'bajar'
+): Promise<void> {
+  const ordenados = [...tipos].sort((a, b) => a.orden - b.orden);
+  const idx = ordenados.findIndex((t) => t.id === id);
+  const idxVecino = direccion === 'subir' ? idx - 1 : idx + 1;
+  if (idx === -1 || idxVecino < 0 || idxVecino >= ordenados.length) return;
+
+  const actual = ordenados[idx];
+  const vecino = ordenados[idxVecino];
+
+  const { error: error1 } = await supabase
+    .from('municipio_tipos')
+    .update({ orden: vecino.orden })
+    .eq('municipio_id', municipioId)
+    .eq('tipo_id', actual.id);
+  if (error1) throw error1;
+
+  const { error: error2 } = await supabase
+    .from('municipio_tipos')
+    .update({ orden: actual.orden })
+    .eq('municipio_id', municipioId)
+    .eq('tipo_id', vecino.id);
+  if (error2) throw error2;
+}
+
+export async function cambiarActivoSubtipoMunicipio(municipioId: string, subtipoId: string, activo: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('municipio_subtipos')
+    .update({ activo })
+    .eq('municipio_id', municipioId)
+    .eq('subtipo_id', subtipoId);
+  if (error) throw error;
+}
+
+export async function reordenarSubtipoMunicipio(
+  municipioId: string,
+  subtipos: Subtipo[],
+  id: string,
+  direccion: 'subir' | 'bajar'
+): Promise<void> {
+  const ordenados = [...subtipos].sort((a, b) => a.orden - b.orden);
+  const idx = ordenados.findIndex((s) => s.id === id);
+  const idxVecino = direccion === 'subir' ? idx - 1 : idx + 1;
+  if (idx === -1 || idxVecino < 0 || idxVecino >= ordenados.length) return;
+
+  const actual = ordenados[idx];
+  const vecino = ordenados[idxVecino];
+
+  const { error: error1 } = await supabase
+    .from('municipio_subtipos')
+    .update({ orden: vecino.orden })
+    .eq('municipio_id', municipioId)
+    .eq('subtipo_id', actual.id);
+  if (error1) throw error1;
+
+  const { error: error2 } = await supabase
+    .from('municipio_subtipos')
+    .update({ orden: actual.orden })
+    .eq('municipio_id', municipioId)
+    .eq('subtipo_id', vecino.id);
+  if (error2) throw error2;
 }
 
 function slugify(nombre: string): string {
@@ -83,14 +298,6 @@ export async function actualizarTipo(id: string, cambios: Partial<DatosTipo>): P
   if (error) throw error;
 }
 
-export async function cambiarActivoTipo(id: string, activo: boolean): Promise<void> {
-  const { error } = await supabase
-    .from('tipos_incidencias')
-    .update({ activo, updated_at: new Date().toISOString() })
-    .eq('id', id);
-  if (error) throw error;
-}
-
 export async function eliminarTipoDefinitivo(id: string): Promise<void> {
   const { count, error: errorCount } = await supabase
     .from('incidencias_anonimas')
@@ -112,28 +319,6 @@ export async function eliminarTipoDefinitivo(id: string): Promise<void> {
 
   const { error } = await supabase.from('tipos_incidencias').delete().eq('id', id);
   if (error) throw error;
-}
-
-export async function reordenarTipo(tipos: Tipo[], id: string, direccion: 'subir' | 'bajar'): Promise<void> {
-  const ordenados = [...tipos].sort((a, b) => a.orden - b.orden);
-  const idx = ordenados.findIndex((t) => t.id === id);
-  const idxVecino = direccion === 'subir' ? idx - 1 : idx + 1;
-  if (idx === -1 || idxVecino < 0 || idxVecino >= ordenados.length) return;
-
-  const actual = ordenados[idx];
-  const vecino = ordenados[idxVecino];
-
-  const { error: error1 } = await supabase
-    .from('tipos_incidencias')
-    .update({ orden: vecino.orden })
-    .eq('id', actual.id);
-  if (error1) throw error1;
-
-  const { error: error2 } = await supabase
-    .from('tipos_incidencias')
-    .update({ orden: actual.orden })
-    .eq('id', vecino.id);
-  if (error2) throw error2;
 }
 
 export interface DatosSubtipo {
@@ -171,14 +356,6 @@ export async function actualizarSubtipo(id: string, cambios: Partial<DatosSubtip
   if (error) throw error;
 }
 
-export async function cambiarActivoSubtipo(id: string, activo: boolean): Promise<void> {
-  const { error } = await supabase
-    .from('subtipos_incidencias')
-    .update({ activo, updated_at: new Date().toISOString() })
-    .eq('id', id);
-  if (error) throw error;
-}
-
 export async function eliminarSubtipoDefinitivo(id: string): Promise<void> {
   const { count, error: errorCount } = await supabase
     .from('incidencias_anonimas')
@@ -191,26 +368,4 @@ export async function eliminarSubtipoDefinitivo(id: string): Promise<void> {
 
   const { error } = await supabase.from('subtipos_incidencias').delete().eq('id', id);
   if (error) throw error;
-}
-
-export async function reordenarSubtipo(subtipos: Subtipo[], id: string, direccion: 'subir' | 'bajar'): Promise<void> {
-  const ordenados = [...subtipos].sort((a, b) => a.orden - b.orden);
-  const idx = ordenados.findIndex((s) => s.id === id);
-  const idxVecino = direccion === 'subir' ? idx - 1 : idx + 1;
-  if (idx === -1 || idxVecino < 0 || idxVecino >= ordenados.length) return;
-
-  const actual = ordenados[idx];
-  const vecino = ordenados[idxVecino];
-
-  const { error: error1 } = await supabase
-    .from('subtipos_incidencias')
-    .update({ orden: vecino.orden })
-    .eq('id', actual.id);
-  if (error1) throw error1;
-
-  const { error: error2 } = await supabase
-    .from('subtipos_incidencias')
-    .update({ orden: actual.orden })
-    .eq('id', vecino.id);
-  if (error2) throw error2;
 }

@@ -27,9 +27,9 @@ export function MapaIncidencias() {
   const popupRef = useRef<Popup | null>(null);
   const [mapaListo, setMapaListo] = useState(false);
 
-  const { tipos } = useTipos();
-  const { incidencias } = useIncidencias();
   const { municipio } = useMunicipioActual();
+  const { tipos } = useTipos(municipio?.id);
+  const { incidencias } = useIncidencias();
 
   // Crea el mapa una sola vez y registra las capas de clustering en cuanto
   // el estilo termina de cargar (no se pueden añadir fuentes/capas antes).
