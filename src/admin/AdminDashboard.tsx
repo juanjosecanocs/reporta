@@ -21,7 +21,7 @@ const ESTADOS: Incidencia['estado'][] = ['pendiente', 'revisada', 'resuelto', 'r
 
 export function AdminDashboard() {
   const { tipos } = useTipos();
-  const { esSuperAdmin } = useAdminAuth();
+  const { esSuperAdmin, municipioId: municipioPropio } = useAdminAuth();
   const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -63,7 +63,7 @@ export function AdminDashboard() {
         estado: filtroEstado || undefined,
         tipoId: filtroTipo || undefined,
         subtipoId: filtroSubtipo || undefined,
-        municipioId: esSuperAdmin ? filtroMunicipio || undefined : undefined,
+        municipioId: esSuperAdmin ? filtroMunicipio || undefined : (municipioPropio ?? undefined),
         incluirBorradas,
       };
       setIncidencias(await listarIncidenciasAdmin(filtros));

@@ -107,13 +107,9 @@ export function HistorialIncidencias({ onVolver }: Props) {
     let cancelado = false;
 
     async function cargar() {
-      const { data } = await supabase
-        .from('incidencias_anonimas')
-        .select('codigo_seguimiento, estado, updated_at')
-        .in(
-          'codigo_seguimiento',
-          historial.map((h) => h.codigo_seguimiento)
-        );
+      const { data } = await supabase.rpc('estados_por_codigos', {
+        codigos: historial.map((h) => h.codigo_seguimiento),
+      });
 
       if (cancelado) return;
 
@@ -140,19 +136,16 @@ export function HistorialIncidencias({ onVolver }: Props) {
     setErrorBusqueda(null);
     setResultadoBusqueda(null);
 
-    const { data, error } = await supabase
-      .from('incidencias_anonimas')
-      .select('codigo_seguimiento, tipo_id, subtipo_id, estado, created_at')
-      .eq('codigo_seguimiento', codigo)
-      .maybeSingle();
+    const { data, error } = await supabase.rpc('incidencia_por_codigo', { codigo });
 
     setBuscando(false);
 
-    if (error || !data) {
+    const resultado = data?.[0];
+    if (error || !resultado) {
       setErrorBusqueda('No se ha encontrado ninguna incidencia con ese código');
       return;
     }
-    setResultadoBusqueda(data);
+    setResultadoBusqueda(resultado);
   }
 
   const entradasOrdenadas = [...historial].sort(
